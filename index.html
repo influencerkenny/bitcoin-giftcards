@@ -1,0 +1,336 @@
+<?php session_start(); ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giftcard & Bitcoin Trading</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="animated-bg-circle circle1"></div>
+  <div class="animated-bg-circle circle2"></div>
+  <div class="animated-bg-circle circle3"></div>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="#"><img src="images/logo.png" alt="Logo" height="40" /></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item"><a class="nav-link" href="#">Blog</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">More</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">FAQ</a></li>
+          <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+<?php if (isset($_SESSION['user_id'])): ?>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="logout.php">Logout</a></li>
+            </ul>
+          </li>
+<?php else: ?>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Account
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
+              <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a></li>
+              <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#signupModal">Signup</a></li>
+            </ul>
+          </li>
+<?php endif; ?>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section py-5 text-center text-md-start bg-gradient bg-primary bg-opacity-10">
+    <div style="position:absolute;inset:0;z-index:0;pointer-events:none;">
+      <canvas id="hero-particles" style="width:100%;height:100%;display:block;"></canvas>
+    </div>
+    <div class="container d-flex flex-column flex-md-row align-items-center" style="position:relative;z-index:1;">
+      <div class="col-md-6">
+        <span class="badge bg-primary mb-2">The best gift card rates</span>
+        <h1 class="fw-bold text-primary-emphasis">Sell Your Bitcoin &<br />Giftcards With Ease</h1>
+        <p class="text-muted">Join millions who've already discovered a smarter way to sell giftcards.<br />We'll make sure you get the best price when you sell your gift card online.</p>
+        <a href="#" class="btn btn-gradient mt-3">Get Started &rarr;</a>
+      </div>
+      <div class="col-md-6 text-center mt-4 mt-md-0">
+        <img src="images/image2.png" class="img-fluid animate-float rounded shadow" style="max-width: 320px; width: 90%;" alt="Gift Card Visual" />
+      </div>
+    </div>
+    <div class="svg-wave">
+      <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;display:block;"><path d="M0 40 Q 360 120 720 60 T 1440 40 V120 H0V40Z" fill="#f8fbff"/></svg>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section py-5 bg-white">
+    <div class="container">
+      <div class="row text-center mb-4">
+        <h2 class="fw-bold mb-3">Why Choose Us?</h2>
+        <p class="text-muted">Fast, secure, and rewarding trading experience for all your Bitcoin and gift card needs.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-3 col-6">
+          <img src="images/image 3.webp" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 1" />
+          <h5>Fast Payouts</h5>
+          <p class="text-muted small">Get your money quickly and securely after every trade.</p>
+        </div>
+        <div class="col-md-3 col-6">
+          <img src="images/image 4.jpeg" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 2" />
+          <h5>Best Rates</h5>
+          <p class="text-muted small">We offer the most competitive rates for your cards and Bitcoin.</p>
+        </div>
+        <div class="col-md-3 col-6">
+          <img src="images/image 5.webp" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 3" />
+          <h5>Secure Transactions</h5>
+          <p class="text-muted small">Your trades are protected with top-tier security protocols.</p>
+        </div>
+        <div class="col-md-3 col-6">
+          <img src="images/image6.webp" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 4" />
+          <h5>24/7 Support</h5>
+          <p class="text-muted small">Our team is always available to help you with your needs.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- More Features Section -->
+  <section class="more-features-section py-5 bg-light">
+    <div class="container">
+      <div class="row text-center mb-4">
+        <h2 class="fw-bold mb-3">More Platform Features</h2>
+        <p class="text-muted">We go beyond the basics to give you the best trading experience.</p>
+      </div>
+      <div class="row g-4 justify-content-center">
+        <div class="col-md-3 col-6">
+          <div class="card border-0 shadow-sm h-100 text-center p-3">
+            <div class="mb-3">
+              <span class="display-4 text-success"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-cash-coin' viewBox='0 0 16 16'><path d='M11 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'/><path d='M1 11.5a.5.5 0 0 1 .5-.5H2v-6h-.5a.5.5 0 0 1 0-1h1a.5.5 0 0 1 .5.5V4h10v-.5a.5.5 0 0 1 1 0v1a.5.5 0 0 1-.5.5H14v6h.5a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5V12H3v.5a.5.5 0 0 1-1 0v-1zM3 5v6h10V5H3z'/></svg></span>
+            </div>
+            <h5>Good Rates</h5>
+            <p class="text-muted small">Enjoy some of the best rates in the market for your Bitcoin and gift cards.</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="card border-0 shadow-sm h-100 text-center p-3">
+            <div class="mb-3">
+              <span class="display-4 text-primary"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-headset' viewBox='0 0 16 16'><path d='M8 3a6 6 0 0 0-6 6v2a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 0 2-2V9a6 6 0 0 0-6-6zm0 1a5 5 0 0 1 5 5v2a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1V9a5 5 0 0 1 5-5z'/></svg></span>
+            </div>
+            <h5>24/7 Support</h5>
+            <p class="text-muted small">Our dedicated support team is always available to assist you.</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="card border-0 shadow-sm h-100 text-center p-3">
+            <div class="mb-3">
+              <span class="display-4 text-warning"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-lightning-charge' viewBox='0 0 16 16'><path d='M11.251 0a.5.5 0 0 1 .416.777L7.417 8H10.5a.5.5 0 0 1 .39.812l-7 9A.5.5 0 0 1 3 17H1.5a.5.5 0 0 1-.416-.777L8.583 8H5.5a.5.5 0 0 1-.39-.812l7-9A.5.5 0 0 1 11.251 0z'/></svg></span>
+            </div>
+            <h5>Instant Payments</h5>
+            <p class="text-muted small">Receive your funds instantly after a successful trade.</p>
+          </div>
+        </div>
+        <div class="col-md-3 col-6">
+          <div class="card border-0 shadow-sm h-100 text-center p-3">
+            <div class="mb-3">
+              <span class="display-4 text-info"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-layout-text-sidebar-reverse' viewBox='0 0 16 16'><path d='M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H2zm0 1h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 2a.5.5 0 0 0 0 1h8a.5.5 0 0 0 0-1H4zm0 2a.5.5 0 0 0 0 1h8a.5.5 0 0 0 0-1H4zm0 2a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1H4z'/></svg></span>
+            </div>
+            <h5>User-Friendly Dashboard</h5>
+            <p class="text-muted small">Easily manage your trades and account with our intuitive dashboard.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works-section py-5 bg-light">
+    <div class="container">
+      <div class="row text-center mb-4">
+        <h2 class="fw-bold mb-3">How It Works</h2>
+        <p class="text-muted">Trading your Bitcoin or gift cards is as easy as 1-2-3!</p>
+      </div>
+      <div class="row g-4 justify-content-center">
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <span class="badge bg-primary mb-2">1</span>
+              <h5 class="card-title">Register an Account</h5>
+              <p class="card-text text-muted">Sign up in seconds and access your dashboard instantly.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <span class="badge bg-success mb-2">2</span>
+              <h5 class="card-title">Upload Card/Bitcoin</h5>
+              <p class="card-text text-muted">Submit your gift card or Bitcoin for instant evaluation.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <span class="badge bg-warning mb-2">3</span>
+              <h5 class="card-title">Get Paid</h5>
+              <p class="card-text text-muted">Receive your payout quickly and securely to your account.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials-section py-5 bg-white">
+    <div class="container">
+      <div class="row text-center mb-4">
+        <h2 class="fw-bold mb-3">What Our Users Say</h2>
+      </div>
+      <div class="row g-4 justify-content-center">
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <p class="card-text">"Super fast and reliable! Got my payout in minutes. Highly recommended."</p>
+              <h6 class="card-subtitle text-muted">— Alex T.</h6>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <p class="card-text">"Best rates I’ve found online. The process was smooth and secure."</p>
+              <h6 class="card-subtitle text-muted">— Maria G.</h6>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <p class="card-text">"Support was there for me 24/7. I felt safe trading my cards here."</p>
+              <h6 class="card-subtitle text-muted">— Samuel K.</h6>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-center py-4 bg-body-tertiary mt-5">
+    <small>&copy; 2025 Your Company. All Rights Reserved.</small>
+  </footer>
+
+  <!-- Add modals at the end of body -->
+  <!-- Login Modal -->
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:1.5rem;">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="loginModalLabel">Sign In</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm" autocomplete="off">
+            <div class="mb-3">
+              <label for="loginEmail" class="form-label">Email address</label>
+              <input type="email" class="form-control" id="loginEmail" name="email" required autofocus />
+            </div>
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label">Password</label>
+              <input type="password" class="form-control" id="loginPassword" name="password" required />
+            </div>
+            <div id="loginError" class="text-danger small mb-2" style="display:none;"></div>
+            <button type="submit" class="btn btn-gradient w-100 mb-2">Login</button>
+            <div class="text-center mt-2">
+              <a href="#" class="text-primary small" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#resetRequestModal">Forgot Password?</a>
+            </div>
+          </form>
+          <div class="text-center mt-2">
+            <small>Don't have an account? <a href="#" class="text-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#signupModal">Sign up</a></small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:1.5rem;">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="signupModalLabel">Sign Up</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="signupForm" autocomplete="off">
+            <div class="mb-3">
+              <label for="signupName" class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="signupName" name="name" required />
+            </div>
+            <div class="mb-3">
+              <label for="signupEmail" class="form-label">Email address</label>
+              <input type="email" class="form-control" id="signupEmail" name="email" required />
+            </div>
+            <div class="mb-3">
+              <label for="signupPassword" class="form-label">Password</label>
+              <input type="password" class="form-control" id="signupPassword" name="password" required />
+            </div>
+            <div class="mb-3">
+              <label for="signupConfirm" class="form-label">Confirm Password</label>
+              <input type="password" class="form-control" id="signupConfirm" name="confirm_password" required />
+            </div>
+            <div id="signupError" class="text-danger small mb-2" style="display:none;"></div>
+            <div id="signupSuccess" class="text-success small mb-2" style="display:none;"></div>
+            <button type="submit" class="btn btn-gradient w-100 mb-2">Sign Up</button>
+          </form>
+          <div class="text-center mt-2">
+            <small>Already have an account? <a href="#" class="text-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a></small>
+            <br>
+            <a href="#" class="text-primary small" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#resetRequestModal">Forgot Password?</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Reset Request Modal -->
+  <div class="modal fade" id="resetRequestModal" tabindex="-1" aria-labelledby="resetRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:1.5rem;">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="resetRequestModalLabel">Reset Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="resetRequestForm" autocomplete="off">
+            <div class="mb-3">
+              <label for="resetEmail" class="form-label">Enter your email address</label>
+              <input type="email" class="form-control" id="resetEmail" name="email" required />
+            </div>
+            <div id="resetRequestError" class="text-danger small mb-2" style="display:none;"></div>
+            <div id="resetRequestSuccess" class="text-success small mb-2" style="display:none;"></div>
+            <button type="submit" class="btn btn-gradient w-100 mb-2">Send Reset Link</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html> 
