@@ -115,7 +115,7 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
     .admin-main-content {
       margin-left: 230px;
       padding: 2rem 2rem 1.5rem 2rem;
-      min-height: 100vh;
+      min-height: 60vh;
       transition: margin-left 0.2s;
       flex: 1 0 auto;
       margin-top: 7rem;
@@ -127,13 +127,16 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
       .admin-sidebar.open { left: 0; }
       #adminSidebarOverlay { display: none; }
       #adminSidebarOverlay.active { display: block; }
-      .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 60px; }
+      .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 60px; margin-top: 900px !important; }
       .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 0; }
       .admin-widget-grid {
         grid-template-columns: repeat(2, 1fr);
         max-width: 600px;
         margin-top: 3.5rem;
         padding-top: 2.5rem;
+      }
+      .widgets-container {
+        margin-top: 90px !important;
       }
     }
     @media (max-width: 600px) {
@@ -381,124 +384,142 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
     </div>
   </header>
   <!-- Main Content -->
-  <main class="admin-main-content" id="adminMainContent">
+  <main class="admin-main-content" id="adminMainContent" style="margin-top: 500px;">
     <div class="container-fluid px-0 widgets-container">
-      <div class="stats-header">
-        <h4 class="mb-0"><span class="bi bi-speedometer2"></span> Dashboard Overview</h4>
-        <div class="d-flex align-items-center gap-3">
-          <div class="auto-refresh-toggle">
-            <span>Auto-refresh</span>
-            <div class="toggle-switch" id="autoRefreshToggle"></div>
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-3">
+            <h3 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color:#19376d;"><span class="bi bi-speedometer2"></span> Dashboard Overview</h3>
+            <div class="d-flex align-items-center gap-3">
+              <div class="auto-refresh-toggle">
+                <span>Auto-refresh</span>
+                <div class="toggle-switch" id="autoRefreshToggle"></div>
+              </div>
+              <button class="refresh-btn" id="refreshStatsBtn" title="Refresh Statistics">
+                <span class="bi bi-arrow-clockwise"></span>
+              </button>
+            </div>
           </div>
-          <button class="refresh-btn" id="refreshStatsBtn" title="Refresh Statistics">
-            <span class="bi bi-arrow-clockwise"></span>
-          </button>
         </div>
       </div>
-      <div class="row g-4 mb-2">
-        <div class="col-md-3">
-          <div class="widget-card gradient-blue d-flex align-items-center gap-3 p-3 h-100 position-relative">
+      <div class="row g-4 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="card shadow-sm border-0 h-100 widget-card gradient-blue position-relative">
             <div class="loading-overlay" id="usersLoading">
               <div class="spinner-border text-primary" role="status"></div>
             </div>
-            <span class="bi bi-people widget-icon"></span>
-            <div>
-              <div class="widget-label">Total Users</div>
-              <div class="widget-value number-animation" id="usersCount"><?php echo $total_users; ?></div>
+            <div class="card-body d-flex align-items-center gap-3">
+              <span class="bi bi-people widget-icon"></span>
+              <div>
+                <div class="widget-label">Total Users</div>
+                <div class="widget-value number-animation" id="usersCount"><?php echo $total_users; ?></div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="widget-card gradient-green d-flex align-items-center gap-3 p-3 h-100 position-relative">
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="card shadow-sm border-0 h-100 widget-card gradient-green position-relative">
             <div class="loading-overlay" id="tradesLoading">
               <div class="spinner-border text-success" role="status"></div>
             </div>
-            <span class="bi bi-arrow-left-right widget-icon"></span>
-            <div>
-              <div class="widget-label">Total Trades</div>
-              <div class="widget-value number-animation" id="tradesCount"><?php echo $total_trades; ?></div>
+            <div class="card-body d-flex align-items-center gap-3">
+              <span class="bi bi-arrow-left-right widget-icon"></span>
+              <div>
+                <div class="widget-label">Total Trades</div>
+                <div class="widget-value number-animation" id="tradesCount"><?php echo $total_trades; ?></div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-6 col-xl-3">
           <a href="admin_giftcard_types.php" style="text-decoration:none;">
-            <div class="widget-card gradient-purple d-flex align-items-center gap-3 p-3 h-100 position-relative">
+            <div class="card shadow-sm border-0 h-100 widget-card gradient-purple position-relative">
               <div class="loading-overlay" id="giftcardLoading">
                 <div class="spinner-border text-warning" role="status"></div>
               </div>
-              <span class="bi bi-gift widget-icon"></span>
-              <div>
-                <div class="widget-label">Gift Card Types</div>
-                <div class="widget-value number-animation" id="giftcardCount"><?php echo $total_giftcards; ?></div>
+              <div class="card-body d-flex align-items-center gap-3">
+                <span class="bi bi-gift widget-icon"></span>
+                <div>
+                  <div class="widget-label">Gift Card Types</div>
+                  <div class="widget-value number-animation" id="giftcardCount"><?php echo $total_giftcards; ?></div>
+                </div>
               </div>
             </div>
           </a>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-6 col-xl-3">
           <a href="admin_bank_accounts.php" style="text-decoration:none;">
-            <div class="widget-card gradient-orange d-flex align-items-center gap-3 p-3 h-100 position-relative">
+            <div class="card shadow-sm border-0 h-100 widget-card gradient-orange position-relative">
               <div class="loading-overlay" id="bankLoading">
                 <div class="spinner-border text-info" role="status"></div>
               </div>
-              <span class="bi bi-bank widget-icon"></span>
-              <div>
-                <div class="widget-label">Bank Accounts</div>
-                <div class="widget-value number-animation" id="bankCount"><?php echo $total_bank_accounts; ?></div>
+              <div class="card-body d-flex align-items-center gap-3">
+                <span class="bi bi-bank widget-icon"></span>
+                <div>
+                  <div class="widget-label">Bank Accounts</div>
+                  <div class="widget-value number-animation" id="bankCount"><?php echo $total_bank_accounts; ?></div>
+                </div>
               </div>
             </div>
           </a>
         </div>
       </div>
-      <div class="row g-4">
-        <div class="col-lg-6">
-          <div class="dashboard-card position-relative">
+      <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+          <div class="card dashboard-card position-relative h-100">
             <div class="loading-overlay" id="usersListLoading">
               <div class="spinner-border text-primary" role="status"></div>
             </div>
-            <h5 class="mb-3"><span class="bi bi-person-plus"></span> Recent Users</h5>
-            <div id="recentUsersList">
-              <ul class="list-group list-group-flush">
-                <?php foreach ($recent_users as $user): ?>
-                  <li class="list-group-item d-flex align-items-center justify-content-between">
-                    <span><strong><?php echo htmlspecialchars($user['name']); ?></strong> <span class="text-muted">(<?php echo htmlspecialchars($user['email']); ?>)</span></span>
-                    <span class="badge bg-primary">Joined <?php echo date('M d', strtotime($user['created_at'])); ?></span>
-                  </li>
-                <?php endforeach; ?>
-              </ul>
+            <div class="card-body">
+              <h5 class="mb-3 fw-bold" style="color:#1a938a;"><span class="bi bi-person-plus"></span> Recent Users</h5>
+              <div id="recentUsersList">
+                <ul class="list-group list-group-flush">
+                  <?php foreach ($recent_users as $user): ?>
+                    <li class="list-group-item d-flex align-items-center justify-content-between">
+                      <span><strong><?php echo htmlspecialchars($user['name']); ?></strong> <span class="text-muted">(<?php echo htmlspecialchars($user['email']); ?>)</span></span>
+                      <span class="badge bg-primary">Joined <?php echo date('M d', strtotime($user['created_at'])); ?></span>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-        <div class="col-lg-6">
-          <div class="dashboard-card position-relative">
+        <div class="col-12 col-lg-6">
+          <div class="card dashboard-card position-relative h-100">
             <div class="loading-overlay" id="tradesListLoading">
               <div class="spinner-border text-success" role="status"></div>
             </div>
-            <h5 class="mb-3"><span class="bi bi-arrow-left-right"></span> Recent Trades</h5>
-            <div id="recentTradesList">
-              <ul class="list-group list-group-flush">
-                <?php while ($row = $recent_btc->fetch_assoc()): ?>
-                  <li class="list-group-item d-flex align-items-center justify-content-between">
-                    <span><span class="badge bg-info">BTC</span> User #<?php echo $row['user_id']; ?>: $<?php echo $row['amount']; ?> (<?php echo htmlspecialchars($row['status']); ?>)</span>
-                    <span class="text-muted"><?php echo date('M d', strtotime($row['date'])); ?></span>
-                  </li>
-                <?php endwhile; ?>
-                <?php while ($row = $recent_giftcard->fetch_assoc()): ?>
-                  <li class="list-group-item d-flex align-items-center justify-content-between">
-                    <span><span class="badge bg-warning text-dark">Giftcard</span> User #<?php echo $row['user_id']; ?>: <?php echo htmlspecialchars($row['card_type']); ?> ₦<?php echo $row['amount']; ?> (<?php echo htmlspecialchars($row['status']); ?>)</span>
-                    <span class="text-muted"><?php echo date('M d', strtotime($row['date'])); ?></span>
-                  </li>
-                <?php endwhile; ?>
-              </ul>
+            <div class="card-body">
+              <h5 class="mb-3 fw-bold" style="color:#1a938a;"><span class="bi bi-arrow-left-right"></span> Recent Trades</h5>
+              <div id="recentTradesList">
+                <ul class="list-group list-group-flush">
+                  <?php while ($row = $recent_btc->fetch_assoc()): ?>
+                    <li class="list-group-item d-flex align-items-center justify-content-between">
+                      <span><span class="badge bg-info">BTC</span> User #<?php echo $row['user_id']; ?>: $<?php echo $row['amount']; ?> (<?php echo htmlspecialchars($row['status']); ?>)</span>
+                      <span class="text-muted"><?php echo date('M d', strtotime($row['date'])); ?></span>
+                    </li>
+                  <?php endwhile; ?>
+                  <?php while ($row = $recent_giftcard->fetch_assoc()): ?>
+                    <li class="list-group-item d-flex align-items-center justify-content-between">
+                      <span><span class="badge bg-warning text-dark">Giftcard</span> User #<?php echo $row['user_id']; ?>: <?php echo htmlspecialchars($row['card_type']); ?> ₦<?php echo $row['amount']; ?> (<?php echo htmlspecialchars($row['status']); ?>)</span>
+                      <span class="text-muted"><?php echo date('M d', strtotime($row['date'])); ?></span>
+                    </li>
+                  <?php endwhile; ?>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div class="row g-4 mt-2">
         <div class="col-12">
-          <div class="dashboard-card">
-            <h5 class="mb-3"><span class="bi bi-bar-chart"></span> Live Crypto Market Prices</h5>
-            <div class="crypto-widget-embed" style="min-height:90px;">
-              <iframe src="https://widget.coinlib.io/widget?type=full_v2&theme=light&cnt=5&pref_coin_id=1505" width="100%" height="196px" scrolling="auto" marginwidth="0" marginheight="0" frameborder="0" style="border:0;margin:0;padding:0;"></iframe>
+          <div class="card dashboard-card">
+            <div class="card-body">
+              <h5 class="mb-3 fw-bold" style="color:#1a938a;"><span class="bi bi-bar-chart"></span> Live Crypto Market Prices</h5>
+              <div class="crypto-widget-embed" style="min-height:90px;">
+                <iframe src="https://widget.coinlib.io/widget?type=full_v2&theme=light&cnt=5&pref_coin_id=1505" width="100%" height="196px" scrolling="auto" marginwidth="0" marginheight="0" frameborder="0" style="border:0;margin:0;padding:0;"></iframe>
+              </div>
             </div>
           </div>
         </div>
