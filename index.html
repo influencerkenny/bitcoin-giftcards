@@ -1,336 +1,417 @@
-<?php session_start(); ?>
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Giftcard & Bitcoin Trading</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
-  <div class="animated-bg-circle circle1"></div>
-  <div class="animated-bg-circle circle2"></div>
-  <div class="animated-bg-circle circle3"></div>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg bg-body-tertiary shadow-sm">
-    <div class="container">
-      <a class="navbar-brand" href="#"><img src="images/logo.png" alt="Logo" height="40" /></a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-        <ul class="navbar-nav">
-          <li class="nav-item"><a class="nav-link" href="#">Blog</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">More</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">About</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">FAQ</a></li>
-          <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
-<?php if (isset($_SESSION['user_id'])): ?>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="assets/images/fav.png" />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="assets/css/swiper.min.css" />
+    <link rel="stylesheet" href="assets/css/odometer.css" />
+    <link rel="stylesheet" href="assets/css/animate.min.css" />
+    <title>Bitcoin & Giftcard Trading Platform</title>
+    <script defer src="index.js"></script>
+    <link href="style.css" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Header Section Start -->
+    <header class="">
+      <div class="top-0 left-0 right-0 z-50 header headerAbsolute 2">
+        <div class="flex justify-between items-center container text-s1 py-6">
+          <div class="pb-1 flex justify-start items-center gap-3">
+            <button class="lg:hidden text-3xl mobileMenuOpenButton">
+              <i class="ph ph-list"></i>
+            </button>
+            <a href="#home">
+              <img src="assets/images/logo.png" alt="logo" />
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-              <li><a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="logout.php">Logout</a></li>
+          </div>
+          <!-- Desktop Menu Start -->
+          <nav class="max-lg:hidden">
+            <ul class="flex justify-center items-center gap-3">
+              <li><a href="#home" class="menu hover:header_menu_shadow duration-700 px-2 py-3 rounded-lg">Home</a></li>
+              <li><a href="#about" class="menu hover:header_menu_shadow duration-700 px-2 py-3 rounded-lg">About</a></li>
+              <li><a href="#features" class="menu hover:header_menu_shadow duration-700 px-2 py-3 rounded-lg">Features</a></li>
+              <li><a href="#why" class="menu hover:header_menu_shadow duration-700 px-2 py-3 rounded-lg">Why Choose Us</a></li>
+              <li><a href="#how" class="menu hover:header_menu_shadow duration-700 px-2 py-3 rounded-lg">How it works</a></li>
+              <li><a href="#testimonies" class="menu hover:header_menu_shadow duration-700 px-2 py-3 rounded-lg">Testimonies</a></li>
+              
             </ul>
-          </li>
-<?php else: ?>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Account
+          </nav>
+          <!-- Desktop Menu End -->
+          <div class="flex justify-end items-center gap-2 sm:gap-6 xl:gap-10 font-medium max-sm:hidden">
+            <a href="signup.php" class="flex justify-center max-sm:text-sm items-center gap-3 py-2 md:py-3 px-3 md:px-6 rounded-full bg-s2 border border-mainTextColor text-mainTextColor group font-medium">
+              Create Account
+              <i class="ph-bold ph-arrow-up-right group-hover:rotate-[45deg] duration-500 text-base sm:text-xl lg:text-2xl !leading-[0]"></i>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
-              <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a></li>
-              <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#signupModal">Signup</a></li>
-            </ul>
-          </li>
-<?php endif; ?>
-        </ul>
+          </div>
+        </div>
       </div>
-    </div>
-  </nav>
+      <!-- Mobile Menu Start -->
+      <nav class="">
+        <div class="fixed top-0 left-0 bg-s1/80 h-full w-full lg:hidden duration-700 z-[998] mobileMenuBg mobileMenuBgClose"></div>
+        <div class="flex justify-start flex-col items-start gap-8 pb-10 lg:gap-20 fixed lg:hidden top-0 left-0 w-3/4 min-[500px]:w-1/2 h-full bg-s2 overflow-y-auto duration-700 z-[999] mobileMenu mobileMenuClose">
+          <div class="flex justify-between items-center w-full p-4 sm:p-8">
+            <a href="#home">
+              <img src="assets/images/logo.png" alt="logo" />
+            </a>
+            <i class="ri-close-line !text-3xl cursor-pointer mobileMenuCloseButton">
+              <i class="ph ph-x"></i>
+            </i>
+          </div>
+          <ul class="text-lg sm:text-xl flex gap-6 lg:gap-10 items-start flex-col pl-8">
+            <li><a href="#home" class="menu-hover hover:after:border-p1">Home</a></li>
+            <li><a href="#about" class="menu-hover hover:after:border-p1">About</a></li>
+            <li><a href="#features" class="menu-hover hover:after:border-p1">Features</a></li>
+            <li><a href="#why" class="menu-hover hover:after:border-p1">Why Choose Us</a></li>
+            <li><a href="#how" class="menu-hover hover:after:border-p1">How it works</a></li>
+            <li><a href="#testimonies" class="menu-hover hover:after:border-p1">Testimonies</a></li>
+            <li class="group relative">
+        
+            </li>
+          </ul>
+        </div>
+      </nav>
+      <!-- Mobile Menu End -->
+    </header>
+    <!-- Header Section End -->
 
-  <!-- Hero Section -->
-  <section class="hero-section py-5 text-center text-md-start bg-gradient bg-primary bg-opacity-10">
-    <div style="position:absolute;inset:0;z-index:0;pointer-events:none;">
-      <canvas id="hero-particles" style="width:100%;height:100%;display:block;"></canvas>
-    </div>
-    <div class="container d-flex flex-column flex-md-row align-items-center" style="position:relative;z-index:1;">
-      <div class="col-md-6">
-        <span class="badge bg-primary mb-2">The best gift card rates</span>
-        <h1 class="fw-bold text-primary-emphasis">Sell Your Bitcoin &<br />Giftcards With Ease</h1>
-        <p class="text-muted">Join millions who've already discovered a smarter way to sell giftcards.<br />We'll make sure you get the best price when you sell your gift card online.</p>
-        <a href="#" class="btn btn-gradient mt-3">Get Started &rarr;</a>
+    <!-- Hero Section Start -->
+    <section id="home" class="bg-repeat stp-30 hero_bg_gradient overflow-hidden" style="position:relative;">
+      <canvas class="hero-particles" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;"></canvas>
+      <div class="xxl:ml-[calc((100%-1296px)/2)] lg:max-xxl:py-10 max-xxl:container relative z-20 max-lg:pt-15 text-s1 grid grid-cols-12">
+        <div class="col-span-12 lg:col-span-6 flex flex-col justify-center gap-2 max-sm:items-center max-sm:text-center">
+          <h1 class="display-4">Sell Your Bitcoin &<br/>Giftcards With Ease</h1>
+          <p class="max-w-[550px]">Join millions who've already discovered a smarter way to sell giftcards.<br />We'll make sure you get the best price when you sell your gift card online.</p>
+          <div class="flex justify-start items-center gap-4 pt-6 lg:pt-8 pb-15 max-sm:justify-center w-full">
+            <a href="signup.php" class="font-medium bg-s2 py-2 lg:py-3 px-4 lg:px-6 rounded-full text-mainTextColor w-full max-w-xs text-center">Get Started</a>
+          </div>
+        </div>
+        <div class="col-span-12 lg:col-span-6 flex justify-center items-center">
+          <img src="images/image2.png" alt="Giftcards and Bitcoin" style="max-width: 400px; width: 100%; border-radius: 20px; background: transparent; transition: transform 0.5s, opacity 0.5s; opacity:0; animation: floatY 3s ease-in-out infinite alternate; z-index:2; position:relative;" onload="this.style.opacity=1" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />
+        </div>
       </div>
-      <div class="col-md-6 text-center mt-4 mt-md-0">
-        <img src="images/image2.png" class="img-fluid animate-float rounded shadow" style="max-width: 320px; width: 90%;" alt="Gift Card Visual" />
-      </div>
-    </div>
-    <div class="svg-wave">
-      <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px;display:block;"><path d="M0 40 Q 360 120 720 60 T 1440 40 V120 H0V40Z" fill="#f8fbff"/></svg>
-    </div>
-  </section>
+    </section>
+    <!-- Hero Section End -->
 
-  <!-- Features Section -->
-  <section class="features-section py-5 bg-white">
-    <div class="container">
-      <div class="row text-center mb-4">
-        <h2 class="fw-bold mb-3">Why Choose Us?</h2>
-        <p class="text-muted">Fast, secure, and rewarding trading experience for all your Bitcoin and gift card needs.</p>
+    <!-- About Section Start -->
+    <section id="about" class="stp-30 sbp-30 relative">
+      <div class="container z-10 relative">
+        <div class="flex justify-center items-center">
+          <div class="flex justify-center items-center max-xxl:overflow-hidden">
+            <div class="max-w-[700px] text-center flex justify-center items-center flex-col">
+              <p class="bg-p1 py-2 sm:py-3 px-5 rounded-full text-white">About Us</p>
+              <h1 class="display-4 pt-4 pb-4 lg:pb-6">Your Trusted Giftcard & Crypto Trading Partner</h1>
+              <p class="text-bodyText">We provide a secure, fast, and reliable platform for buying and selling giftcards and cryptocurrencies. Whether you want to cash out your giftcards or trade Bitcoin, our platform ensures you get the best rates and instant payouts. Join a community of satisfied users who trust us for all their digital trading needs.</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="row g-4">
-        <div class="col-md-3 col-6">
-          <img src="images/image 3.webp" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 1" />
-          <h5>Fast Payouts</h5>
-          <p class="text-muted small">Get your money quickly and securely after every trade.</p>
+    </section>
+    <!-- About Section End -->
+
+    <!-- Features Section Start -->
+    <section id="features" class="bg-softBg1 stp-30 sbp-30">
+      <div class="container">
+        <div class="flex justify-between items-end gap-6 max-lg:flex-col max-lg:items-start">
+          <div class="max-w-[600px] flex justify-center items-start flex-col">
+            <p class="bg-p1 py-3 px-5 rounded-full text-white">Features</p>
+            <h1 class="display-4 pt-4">Why Trade With Us?</h1>
+          </div>
+          <p class="text-bodyText max-w-[500px]">Our platform is designed for speed, security, and convenience. Enjoy instant payouts, competitive rates, 24/7 support, and a seamless trading experience for both giftcards and cryptocurrencies.</p>
         </div>
-        <div class="col-md-3 col-6">
-          <img src="images/image 4.jpeg" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 2" />
-          <h5>Best Rates</h5>
-          <p class="text-muted small">We offer the most competitive rates for your cards and Bitcoin.</p>
+        <div class="grid grid-cols-12 gap-6 stp-15">
+          <div class="col-span-12 sm:col-span-6 lg:col-span-3">
+            <div class="bg-white p-6 xl:p-8 flex flex-col border border-white group hover:border-mainTextColor duration-700 hover:bg-s2">
+              <div class="text-4xl text-s1 pb-6 group-hover:text-mainTextColor duration-500"><i class="ph-fill ph-lightning"></i></div>
+              <h4 class="heading-4 pb-5">Instant Payouts</h4>
+              <p class="text-bodyText pb-6">Get paid instantly when you sell your giftcards or crypto. No waiting, no hassle.</p>
+            </div>
+          </div>
+          <div class="col-span-12 sm:col-span-6 lg:col-span-3">
+            <div class="bg-white p-6 xl:p-8 flex flex-col border border-white group hover:border-mainTextColor duration-700 hover:bg-s2">
+              <div class="text-4xl text-s1 pb-6 group-hover:text-mainTextColor duration-500"><i class="ph-fill ph-shield-check"></i></div>
+              <h4 class="heading-4 pb-5">Secure Transactions</h4>
+              <p class="text-bodyText pb-6">Your security is our priority. All trades are protected with advanced encryption and fraud prevention.</p>
+            </div>
+          </div>
+          <div class="col-span-12 sm:col-span-6 lg:col-span-3">
+            <div class="bg-white p-6 xl:p-8 flex flex-col border border-white group hover:border-mainTextColor duration-700 hover:bg-s2">
+              <div class="text-4xl text-s1 pb-6 group-hover:text-mainTextColor duration-500"><i class="ph-fill ph-currency-btc"></i></div>
+              <h4 class="heading-4 pb-5">Best Rates</h4>
+              <p class="text-bodyText pb-6">We offer the most competitive rates for your giftcards and cryptocurrencies, maximizing your returns.</p>
+            </div>
+          </div>
+          <div class="col-span-12 sm:col-span-6 lg:col-span-3">
+            <div class="bg-white p-6 xl:p-8 flex flex-col border border-white group hover:border-mainTextColor duration-700 hover:bg-s2">
+              <div class="text-4xl text-s1 pb-6 group-hover:text-mainTextColor duration-500"><i class="ph-fill ph-headset"></i></div>
+              <h4 class="heading-4 pb-5">24/7 Support</h4>
+              <p class="text-bodyText pb-6">Our support team is always available to help you with any questions or issues, day or night.</p>
+            </div>
+          </div>
         </div>
-        <div class="col-md-3 col-6">
-          <img src="images/image 5.webp" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 3" />
-          <h5>Secure Transactions</h5>
-          <p class="text-muted small">Your trades are protected with top-tier security protocols.</p>
+      </div>
+    </section>
+    <!-- Features Section End -->
+
+    <!-- Why Choose Us Section Start -->
+    <section id="why" class="bg-softBg1 stp-30 sbp-30 overflow-hidden">
+      <div class="container">
+        <div class="flex justify-between items-end gap-6 max-lg:flex-col max-lg:items-start">
+          <div class="max-w-[600px] flex justify-center items-start flex-col">
+            <p class="bg-p1 py-3 px-5 rounded-full text-white">Why Choose Us</p>
+            <h1 class="display-4 pt-4">The Most Trusted Platform</h1>
+          </div>
+          <p class="text-bodyText max-w-[500px]">Thousands of users trust us for their giftcard and crypto trades. Our reputation is built on transparency, reliability, and customer satisfaction.</p>
         </div>
-        <div class="col-md-3 col-6">
-          <img src="images/image6.webp" class="img-fluid rounded mb-3 shadow-sm" alt="Feature 4" />
-          <h5>24/7 Support</h5>
-          <p class="text-muted small">Our team is always available to help you with your needs.</p>
+        <div class="grid grid-cols-12 gap-6 stp-15">
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4 bg-white p-6 xl:py-10 xl:px-15 flex flex-col items-center border border-white group hover:border-mainTextColor duration-700 hover:bg-s2">
+            <div><img src="assets/images/whyAccoupayCard_1.png" alt="Fast Payment" style="max-width:100px; transition: transform 0.5s, opacity 0.5s; opacity:0;" onload="this.style.opacity=1" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" /></div>
+            <h4 class="pt-8 heading-4">Fast Payment Processing</h4>
+          </div>
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4 bg-white p-6 xl:py-10 xl:px-15 flex flex-col items-center border border-white group hover:border-mainTextColor duration-700 hover:bg-s2">
+            <div><img src="assets/images/whyAccoupayCard_2.png" alt="Best Rates" style="max-width:100px; transition: transform 0.5s, opacity 0.5s; opacity:0;" onload="this.style.opacity=1" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" /></div>
+            <h4 class="pt-8 heading-4">Best Market Rates</h4>
+          </div>
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4 bg-white p-6 xl:py-10 xl:px-15 flex flex-col items-center border border-white group hover:border-mainTextColor duration-700 hover:bg-s2">
+            <div><img src="assets/images/whyAccoupayCard_3.png" alt="Secure" style="max-width:100px; transition: transform 0.5s, opacity 0.5s; opacity:0;" onload="this.style.opacity=1" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" /></div>
+            <h4 class="pt-8 heading-4">Secure & Transparent</h4>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Why Choose Us Section End -->
+
+    <!-- How It Works Section Start -->
+    <section id="how" class="stp-30 sbp-30">
+      <div class="container">
+        <div class="flex justify-center items-center">
+          <div class="flex justify-center items-center max-xxl:overflow-hidden">
+            <div class="max-w-[700px] text-center flex justify-center items-center flex-col">
+              <p class="bg-p1 py-2 sm:py-3 px-5 rounded-full text-white">How it works</p>
+              <h1 class="display-4 pt-4 pb-4 lg:pb-6">Trading Made Simple</h1>
+              <p class="text-bodyText">Get started in just a few steps. Our process is designed to be simple, fast, and secure for everyone.</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between items-center gap-6 md:gap-4 lg:gap-6 stp-15 relative max-md:flex-col">
+          <div class="flex justify-center items-center text-center flex-col max-w-[350px]">
+            <div class="text-s1 bg-softBg border border-strokeColor rounded-full p-6 lg:p-7 text-3xl lg:text-5xl"><i class="ph-fill ph-user-plus"></i></div>
+            <h4 class="heading-4 pt-8 pb-6">Create an Account</h4>
+            <p class="text-bodyText">Sign up quickly and securely to start trading giftcards and crypto.</p>
+          </div>
+          <div class="flex justify-center items-center text-center flex-col max-w-[350px]">
+            <div class="text-s1 bg-softBg border border-strokeColor rounded-full p-6 lg:p-7 text-3xl lg:text-5xl"><i class="ph-fill ph-credit-card"></i></div>
+            <h4 class="heading-4 pt-8 pb-6">List Your Giftcard or Crypto</h4>
+            <p class="text-bodyText">Easily list your giftcards or cryptocurrencies for sale or exchange.</p>
+          </div>
+          <div class="flex justify-center items-center text-center flex-col max-w-[350px]">
+            <div class="text-s1 bg-softBg border border-strokeColor rounded-full p-6 lg:p-7 text-3xl lg:text-5xl"><i class="ph-fill ph-lightning"></i></div>
+            <h4 class="heading-4 pt-8 pb-6">Get Paid Instantly</h4>
+            <p class="text-bodyText">Receive your payment instantly and securely, directly to your preferred method.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- How It Works Section End -->
+
+    <!-- Testimonies Section Start -->
+    <section id="testimonies" class="stp-30 sbp-30 relative sponsors">
+      <div class="container">
+        <div class="flex justify-between items-end gap-6 max-lg:flex-col max-lg:items-start">
+          <div class="max-w-[600px] flex justify-center items-start flex-col">
+            <p class="bg-p1 py-3 px-5 rounded-full text-white">Testimonies</p>
+            <h1 class="display-4 pt-4">What Our Users Say</h1>
+          </div>
+          <p class="text-bodyText max-w-[500px]">See why thousands trust us for their giftcard and crypto trades.</p>
+        </div>
+        <div class="stp-15 grid grid-cols-12 gap-6">
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div class="border border-strokeColor p-12 flex flex-col justify-center items-center hover:bg-s2 hover:border-mainTextColor duration-700">
+              <p class="text-bodyText text-center">"The best platform for selling my giftcards! Fast payment and great rates."</p>
+              <div class="flex gap-3 pt-3">
+                <img src="assets/images/testimonial10.png" alt="User" class="rounded-full" style="max-width:60px; transition: transform 0.5s, opacity 0.5s; opacity:0;" onload="this.style.opacity=1" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
+                <div>
+                  <p class="text-lg font-medium">Isabelle McKinney</p>
+                  <p>Giftcard Seller</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div class="border border-strokeColor p-12 flex flex-col justify-center items-center hover:bg-s2 hover:border-mainTextColor duration-700">
+              <p class="text-bodyText text-center">"I traded Bitcoin for cash in minutes. Super easy and secure!"</p>
+              <div class="flex gap-3 pt-3">
+                <img src="assets/images/testimonial9.png" alt="User" class="rounded-full" style="max-width:60px; transition: transform 0.5s, opacity 0.5s; opacity:0;" onload="this.style.opacity=1" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
+                <div>
+                  <p class="text-lg font-medium">Amy Gutierrez</p>
+                  <p>Crypto Trader</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div class="border border-strokeColor p-12 flex flex-col justify-center items-center hover:bg-s2 hover:border-mainTextColor duration-700">
+              <p class="text-bodyText text-center">"Excellent support and the best rates for my giftcards. Highly recommend!"</p>
+              <div class="flex gap-3 pt-3">
+                <img src="assets/images/testimonial8.png" alt="User" class="rounded-full" style="max-width:60px; transition: transform 0.5s, opacity 0.5s; opacity:0;" onload="this.style.opacity=1" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" />
+                <div>
+                  <p class="text-lg font-medium">John D</p>
+                  <p>Giftcard & Crypto User</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Testimonies Section End -->
+
+    <!-- Account Section Start -->
+    <section id="account" class="stp-30 sbp-30 bg-softBg1">
+      <div class="container flex flex-col items-center justify-center text-center">
+        <h2 class="display-4 pb-4">Ready to Get Started?</h2>
+        <p class="text-bodyText pb-6">Create an account or log in to start trading your giftcards and cryptocurrencies today.</p>
+        <div class="flex gap-4 justify-center">
+          <a href="login.php" class="font-medium bg-s2 py-2 px-6 rounded-full text-mainTextColor">Login</a>
+          <a href="signup.php" class="font-medium bg-s1 py-2 px-6 rounded-full text-white">Register</a>
+        </div>
+      </div>
+    </section>
+    <!-- Account Section End -->
+
+    <!-- Footer Section Start -->
+    <footer class="bg-s1 text-white py-8 mt-10">
+      <div class="container flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
+          <img src="assets/images/logo_white.png" alt="logo" style="max-width:120px;" />
+        </div>
+        <div class="text-center md:text-right">
+          <p>&copy; 2024 Bitcoin & Giftcard Trading Platform. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+    <!-- Footer Section End -->
+    <script src="assets/js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particlesjs/2.2.3/particles.min.js"></script>
+    <script>
+      window.onload = function() {
+        Particles.init({
+          selector: '.hero-particles',
+          maxParticles: 80,
+          color: ['#fbbf24', '#f472b6', '#60a5fa', '#34d399'],
+          connectParticles: true,
+          speed: 0.5,
+          sizeVariations: 4,
+          responsive: [
+            {
+              breakpoint: 768,
+              options: {
+                maxParticles: 40
+              }
+            }
+          ]
+        });
+      };
+    </script>
+    <style>
+      @keyframes floatY {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-30px); }
+      }
+    </style>
+    <!-- Add Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300 hidden">
+      <div class="login-card relative animate__animated animate__fadeInDown" style="background:rgba(255,255,255,0.85); box-shadow:0 8px 32px 0 rgba(31,38,135,0.18); border-radius:1.5rem; border:1.5px solid rgba(14,165,233,0.12); backdrop-filter: blur(12px); max-width:420px; width:100%; padding:2.5rem 2rem;">
+        <button onclick="closeModal('loginModal')" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-s1 bg-white/70 hover:bg-s1/10 rounded-full p-2 shadow transition-all duration-200 border border-gray-200"><i class="ph ph-x"></i></button>
+        <h2 class="text-center" style="font-size:2rem;font-weight:700;color:#0ea5e9;margin-bottom:0.5rem;">Sign in to your account</h2>
+        <p class="text-center" style="color:#64748b;margin-bottom:2rem;">Access your dashboard and manage your trades securely.</p>
+        <form method="post" action="login.php" autocomplete="on">
+          <label for="modal-email">Email Address</label>
+          <div class="relative mb-5">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-s1 text-lg"><i class="ph ph-envelope"></i></span>
+            <input type="email" id="modal-email" name="email" placeholder="Enter your email" required autofocus style="padding-left:2.5rem;">
+          </div>
+          <label for="modal-password">Password</label>
+          <div class="relative mb-5">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-s1 text-lg"><i class="ph ph-lock"></i></span>
+            <input type="password" id="modal-password" name="password" placeholder="Enter your password" required style="padding-left:2.5rem;">
+            <button type="button" tabindex="-1" onclick="togglePassword('modal-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-s1 bg-transparent border-none outline-none cursor-pointer"><i class="ph ph-eye"></i></button>
+          </div>
+          <a href="reset_password.php" class="forgot-link">Forgot Password?</a>
+          <button type="submit" class="login-btn">Login</button>
+        </form>
+        <div class="text-center mt-2">
+          <small>Don't have an account? <a href="#" class="signup-link-modal" onclick="openModal('signupModal');closeModal('loginModal');return false;">Sign up</a></small>
         </div>
       </div>
     </div>
-  </section>
-
-  <!-- More Features Section -->
-  <section class="more-features-section py-5 bg-light">
-    <div class="container">
-      <div class="row text-center mb-4">
-        <h2 class="fw-bold mb-3">More Platform Features</h2>
-        <p class="text-muted">We go beyond the basics to give you the best trading experience.</p>
-      </div>
-      <div class="row g-4 justify-content-center">
-        <div class="col-md-3 col-6">
-          <div class="card border-0 shadow-sm h-100 text-center p-3">
-            <div class="mb-3">
-              <span class="display-4 text-success"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-cash-coin' viewBox='0 0 16 16'><path d='M11 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'/><path d='M1 11.5a.5.5 0 0 1 .5-.5H2v-6h-.5a.5.5 0 0 1 0-1h1a.5.5 0 0 1 .5.5V4h10v-.5a.5.5 0 0 1 1 0v1a.5.5 0 0 1-.5.5H14v6h.5a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5V12H3v.5a.5.5 0 0 1-1 0v-1zM3 5v6h10V5H3z'/></svg></span>
-            </div>
-            <h5>Good Rates</h5>
-            <p class="text-muted small">Enjoy some of the best rates in the market for your Bitcoin and gift cards.</p>
+    <!-- Add Signup Modal -->
+    <div id="signupModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300 hidden">
+      <div class="login-card relative animate__animated animate__fadeInDown" style="background:rgba(255,255,255,0.85); box-shadow:0 8px 32px 0 rgba(31,38,135,0.18); border-radius:1.5rem; border:1.5px solid rgba(14,165,233,0.12); backdrop-filter: blur(12px); max-width:420px; width:100%; padding:2.5rem 2rem;">
+        <button onclick="closeModal('signupModal')" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-s1 bg-white/70 hover:bg-s1/10 rounded-full p-2 shadow transition-all duration-200 border border-gray-200"><i class="ph ph-x"></i></button>
+        <h2 class="text-center" style="font-size:2rem;font-weight:700;color:#0ea5e9;margin-bottom:0.5rem;">Create your account</h2>
+        <p class="text-center" style="color:#64748b;margin-bottom:2rem;">Start trading giftcards and crypto in minutes.</p>
+        <form method="post" action="signup.php" autocomplete="on">
+          <label for="signup-name">Full Name</label>
+          <div class="relative mb-5">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-s1 text-lg"><i class="ph ph-user"></i></span>
+            <input type="text" id="signup-name" name="name" placeholder="Enter your full name" required style="padding-left:2.5rem;">
           </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="card border-0 shadow-sm h-100 text-center p-3">
-            <div class="mb-3">
-              <span class="display-4 text-primary"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-headset' viewBox='0 0 16 16'><path d='M8 3a6 6 0 0 0-6 6v2a2 2 0 0 0 2 2h1a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h1a2 2 0 0 0 2-2V9a6 6 0 0 0-6-6zm0 1a5 5 0 0 1 5 5v2a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1V9a5 5 0 0 1 5-5z'/></svg></span>
-            </div>
-            <h5>24/7 Support</h5>
-            <p class="text-muted small">Our dedicated support team is always available to assist you.</p>
+          <label for="signup-email">Email Address</label>
+          <div class="relative mb-5">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-s1 text-lg"><i class="ph ph-envelope"></i></span>
+            <input type="email" id="signup-email" name="email" placeholder="Enter your email" required style="padding-left:2.5rem;">
           </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="card border-0 shadow-sm h-100 text-center p-3">
-            <div class="mb-3">
-              <span class="display-4 text-warning"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-lightning-charge' viewBox='0 0 16 16'><path d='M11.251 0a.5.5 0 0 1 .416.777L7.417 8H10.5a.5.5 0 0 1 .39.812l-7 9A.5.5 0 0 1 3 17H1.5a.5.5 0 0 1-.416-.777L8.583 8H5.5a.5.5 0 0 1-.39-.812l7-9A.5.5 0 0 1 11.251 0z'/></svg></span>
-            </div>
-            <h5>Instant Payments</h5>
-            <p class="text-muted small">Receive your funds instantly after a successful trade.</p>
+          <label for="signup-password">Password</label>
+          <div class="relative mb-5">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-s1 text-lg"><i class="ph ph-lock"></i></span>
+            <input type="password" id="signup-password" name="password" placeholder="Create a password" required style="padding-left:2.5rem;">
+            <button type="button" tabindex="-1" onclick="togglePassword('signup-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-s1 bg-transparent border-none outline-none cursor-pointer"><i class="ph ph-eye"></i></button>
           </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="card border-0 shadow-sm h-100 text-center p-3">
-            <div class="mb-3">
-              <span class="display-4 text-info"><svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='currentColor' class='bi bi-layout-text-sidebar-reverse' viewBox='0 0 16 16'><path d='M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H2zm0 1h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm2 2a.5.5 0 0 0 0 1h8a.5.5 0 0 0 0-1H4zm0 2a.5.5 0 0 0 0 1h8a.5.5 0 0 0 0-1H4zm0 2a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1H4z'/></svg></span>
-            </div>
-            <h5>User-Friendly Dashboard</h5>
-            <p class="text-muted small">Easily manage your trades and account with our intuitive dashboard.</p>
-          </div>
+          <button type="submit" class="login-btn">Register</button>
+        </form>
+        <div class="text-center mt-2">
+          <small>Already have an account? <a href="#" class="login-link-modal" onclick="openModal('loginModal');closeModal('signupModal');return false;">Login</a></small>
         </div>
       </div>
     </div>
-  </section>
-
-  <!-- How It Works Section -->
-  <section class="how-it-works-section py-5 bg-light">
-    <div class="container">
-      <div class="row text-center mb-4">
-        <h2 class="fw-bold mb-3">How It Works</h2>
-        <p class="text-muted">Trading your Bitcoin or gift cards is as easy as 1-2-3!</p>
-      </div>
-      <div class="row g-4 justify-content-center">
-        <div class="col-md-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-              <span class="badge bg-primary mb-2">1</span>
-              <h5 class="card-title">Register an Account</h5>
-              <p class="card-text text-muted">Sign up in seconds and access your dashboard instantly.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-              <span class="badge bg-success mb-2">2</span>
-              <h5 class="card-title">Upload Card/Bitcoin</h5>
-              <p class="card-text text-muted">Submit your gift card or Bitcoin for instant evaluation.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-              <span class="badge bg-warning mb-2">3</span>
-              <h5 class="card-title">Get Paid</h5>
-              <p class="card-text text-muted">Receive your payout quickly and securely to your account.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Testimonials Section -->
-  <section class="testimonials-section py-5 bg-white">
-    <div class="container">
-      <div class="row text-center mb-4">
-        <h2 class="fw-bold mb-3">What Our Users Say</h2>
-      </div>
-      <div class="row g-4 justify-content-center">
-        <div class="col-md-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-              <p class="card-text">"Super fast and reliable! Got my payout in minutes. Highly recommended."</p>
-              <h6 class="card-subtitle text-muted">— Alex T.</h6>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-              <p class="card-text">"Best rates I’ve found online. The process was smooth and secure."</p>
-              <h6 class="card-subtitle text-muted">— Maria G.</h6>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-              <p class="card-text">"Support was there for me 24/7. I felt safe trading my cards here."</p>
-              <h6 class="card-subtitle text-muted">— Samuel K.</h6>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="text-center py-4 bg-body-tertiary mt-5">
-    <small>&copy; 2025 Your Company. All Rights Reserved.</small>
-  </footer>
-
-  <!-- Add modals at the end of body -->
-  <!-- Login Modal -->
-  <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="border-radius:1.5rem;">
-        <div class="modal-header border-0">
-          <h5 class="modal-title fw-bold" id="loginModalLabel">Sign In</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="loginForm" autocomplete="off">
-            <div class="mb-3">
-              <label for="loginEmail" class="form-label">Email address</label>
-              <input type="email" class="form-control" id="loginEmail" name="email" required autofocus />
-            </div>
-            <div class="mb-3">
-              <label for="loginPassword" class="form-label">Password</label>
-              <input type="password" class="form-control" id="loginPassword" name="password" required />
-            </div>
-            <div id="loginError" class="text-danger small mb-2" style="display:none;"></div>
-            <button type="submit" class="btn btn-gradient w-100 mb-2">Login</button>
-            <div class="text-center mt-2">
-              <a href="#" class="text-primary small" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#resetRequestModal">Forgot Password?</a>
-            </div>
-          </form>
-          <div class="text-center mt-2">
-            <small>Don't have an account? <a href="#" class="text-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#signupModal">Sign up</a></small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Signup Modal -->
-  <div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="border-radius:1.5rem;">
-        <div class="modal-header border-0">
-          <h5 class="modal-title fw-bold" id="signupModalLabel">Sign Up</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="signupForm" autocomplete="off">
-            <div class="mb-3">
-              <label for="signupName" class="form-label">Full Name</label>
-              <input type="text" class="form-control" id="signupName" name="name" required />
-            </div>
-            <div class="mb-3">
-              <label for="signupEmail" class="form-label">Email address</label>
-              <input type="email" class="form-control" id="signupEmail" name="email" required />
-            </div>
-            <div class="mb-3">
-              <label for="signupPassword" class="form-label">Password</label>
-              <input type="password" class="form-control" id="signupPassword" name="password" required />
-            </div>
-            <div class="mb-3">
-              <label for="signupConfirm" class="form-label">Confirm Password</label>
-              <input type="password" class="form-control" id="signupConfirm" name="confirm_password" required />
-            </div>
-            <div id="signupError" class="text-danger small mb-2" style="display:none;"></div>
-            <div id="signupSuccess" class="text-success small mb-2" style="display:none;"></div>
-            <button type="submit" class="btn btn-gradient w-100 mb-2">Sign Up</button>
-          </form>
-          <div class="text-center mt-2">
-            <small>Already have an account? <a href="#" class="text-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a></small>
-            <br>
-            <a href="#" class="text-primary small" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#resetRequestModal">Forgot Password?</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Password Reset Request Modal -->
-  <div class="modal fade" id="resetRequestModal" tabindex="-1" aria-labelledby="resetRequestModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="border-radius:1.5rem;">
-        <div class="modal-header border-0">
-          <h5 class="modal-title fw-bold" id="resetRequestModalLabel">Reset Password</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="resetRequestForm" autocomplete="off">
-            <div class="mb-3">
-              <label for="resetEmail" class="form-label">Enter your email address</label>
-              <input type="email" class="form-control" id="resetEmail" name="email" required />
-            </div>
-            <div id="resetRequestError" class="text-danger small mb-2" style="display:none;"></div>
-            <div id="resetRequestSuccess" class="text-success small mb-2" style="display:none;"></div>
-            <button type="submit" class="btn btn-gradient w-100 mb-2">Send Reset Link</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="js/script.js"></script>
-</body>
-</html> 
+    <script>
+      function openModal(id) {
+        document.getElementById(id).classList.remove('hidden');
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+      }
+      function togglePassword(inputId, btn) {
+        var input = document.getElementById(inputId);
+        var icon = btn.querySelector('i');
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.remove('ph-eye');
+          icon.classList.add('ph-eye-slash');
+        } else {
+          input.type = 'password';
+          icon.classList.remove('ph-eye-slash');
+          icon.classList.add('ph-eye');
+        }
+      }
+      // Optional: Close modal on ESC
+      window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeModal('loginModal');
+          closeModal('signupModal');
+        }
+      });
+      // Optional: Close modal when clicking outside the card
+      ['loginModal','signupModal'].forEach(function(id) {
+        var modal = document.getElementById(id);
+        if (modal) {
+          modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal(id);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

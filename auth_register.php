@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 header('Content-Type: application/json');
 require_once 'db.php';
 
@@ -12,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(false, 'Invalid request.');
 }
 
-$name = trim($_POST['name'] ?? '');
+$name = trim($_POST['name'] ?? $_POST['fullname'] ?? '');
 $username = trim($_POST['username'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
@@ -68,5 +71,5 @@ if ($stmt->execute()) {
     send_email($email, $welcome_subject, $welcome_body);
     respond(true, 'Registration successful! You can now log in.');
 } else {
-    respond(false, 'Registration failed. Please try again.');
+    respond(false, 'Registration failed: ' . $stmt->error);
 } 

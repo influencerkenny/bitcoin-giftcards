@@ -64,6 +64,14 @@ $user_2fa = false;
 if (isset($_SESSION['user_2fa'])) {
   $user_2fa = $_SESSION['user_2fa'];
 }
+// Fetch wallet balance for the user
+$wallet_balance = 0.00;
+$stmt = $db->prepare('SELECT balance FROM users WHERE id = ?');
+$stmt->bind_param('i', $user_id);
+$stmt->execute();
+$stmt->bind_result($wallet_balance);
+$stmt->fetch();
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,9 +83,9 @@ if (isset($_SESSION['user_2fa'])) {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <style>
     body {
-      background: linear-gradient(135deg, #0a174e 0%, #19376d 100%);
+      background: linear-gradient(252deg, #1a938a 0%, rgba(26, 147, 138, 0) 100.44%);
       min-height: 100vh;
-      color: #23234c;
+      color: #19376d;
     }
     .dashboard-header {
       background: #fff;
@@ -103,7 +111,7 @@ if (isset($_SESSION['user_2fa'])) {
       gap: 0.5rem;
     }
     .sidebar {
-      background: #19376d;
+      background: #1a938a;
       color: #fff;
       min-height: 100vh;
       padding: 2rem 0.5rem 2rem 0.5rem;
@@ -127,8 +135,8 @@ if (isset($_SESSION['user_2fa'])) {
       transition: background 0.15s;
     }
     .sidebar .nav-link.active, .sidebar .nav-link:hover {
-      background: #0a174e;
-      color: #fff;
+      background: #ffbf3f;
+      color: #19376d;
     }
     .sidebar .nav-link .bi { font-size: 1.2rem; }
     .sidebar-toggler {
@@ -151,12 +159,12 @@ if (isset($_SESSION['user_2fa'])) {
     .dashboard-card {
       background: #fff;
       border-radius: 1.2rem;
-      box-shadow: 0 4px 24px rgba(10,23,78,0.08);
+      box-shadow: 0 4px 24px rgba(26,147,138,0.08);
       padding: 1.5rem 1.2rem;
       margin-bottom: 2rem;
     }
-    .dashboard-card h5 { color: #19376d; font-weight: 700; }
-    .dashboard-table th { color: #19376d; font-weight: 600; }
+    .dashboard-card h5 { color: #1a938a; font-weight: 700; }
+    .dashboard-table th { color: #1a938a; font-weight: 600; }
     .dashboard-table td, .dashboard-table th { vertical-align: middle; }
     .dashboard-table .badge { font-size: 0.95em; }
     .rate-card {
@@ -166,7 +174,7 @@ if (isset($_SESSION['user_2fa'])) {
       gap: 1.5rem;
       margin-bottom: 1rem;
     }
-    .rate-card .rate-label { font-weight: 600; color: #19376d; }
+    .rate-card .rate-label { font-weight: 600; color: #1a938a; }
     .rate-card .rate-value { font-size: 1.2rem; font-weight: 700; color: #0a174e; }
     .rate-card .btn { border-radius: 2rem; font-weight: 600; }
     @media (max-width: 991px) {
@@ -190,15 +198,15 @@ if (isset($_SESSION['user_2fa'])) {
     }
     .widget-card {
       border-radius: 1.1rem;
-      box-shadow: 0 2px 16px rgba(10,23,78,0.10);
-      background: #fff;
+      box-shadow: 0 2px 16px rgba(26,147,138,0.10);
+      background: #ffbf3f;
       min-height: 90px;
       transition: box-shadow 0.18s, transform 0.18s;
       cursor: pointer;
       position: relative;
     }
     .widget-card:hover {
-      box-shadow: 0 6px 32px rgba(25,55,109,0.13);
+      box-shadow: 0 6px 32px rgba(26,147,138,0.13);
       transform: translateY(-2px) scale(1.02);
     }
     .widget-icon {
@@ -206,15 +214,15 @@ if (isset($_SESSION['user_2fa'])) {
       color: #fff;
       padding: 0.7rem;
       border-radius: 1rem;
-      background: rgba(25,55,109,0.7);
-      box-shadow: 0 2px 8px rgba(25,55,109,0.10);
+      background: #1a938a;
+      box-shadow: 0 2px 8px rgba(26,147,138,0.10);
       min-width: 48px;
       text-align: center;
       display: inline-block;
     }
-    .gradient-blue { background: linear-gradient(90deg, #19376d 60%, #0a174e 100%); color: #fff; }
-    .gradient-green { background: linear-gradient(90deg, #20c997 60%, #19376d 100%); color: #fff; }
-    .gradient-purple { background: linear-gradient(90deg, #6f42c1 60%, #19376d 100%); color: #fff; }
+    .gradient-blue { background: linear-gradient(90deg, #1a938a 60%, #0a174e 100%); color: #fff; }
+    .gradient-green { background: linear-gradient(90deg, #ffbf3f 60%, #1a938a 100%); color: #fff; }
+    .gradient-purple { background: linear-gradient(90deg, #6f42c1 60%, #1a938a 100%); color: #fff; }
     .widget-label { font-size: 1.05rem; font-weight: 500; opacity: 0.85; }
     .widget-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.2rem; }
     @media (max-width: 991px) {
@@ -224,14 +232,14 @@ if (isset($_SESSION['user_2fa'])) {
       #sidebarOverlay.active { display: block; }
     }
     .btc-list { margin-top: 0.5rem; }
-    .btc-row { box-shadow: 0 1px 6px rgba(25,55,109,0.04); border-left: 4px solid #19376d; }
+    .btc-row { box-shadow: 0 1px 6px rgba(26,147,138,0.04); border-left: 4px solid #1a938a; }
     .btc-type-badge.buy { background: #e0f7fa; color: #007bff; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .btc-type-badge.sell { background: #fce4ec; color: #d63384; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .btc-status-badge.paid { background: #e6f4ea; color: #198754; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .btc-status-badge.pending { background: #e3f2fd; color: #0d6efd; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .btc-status-badge.declined { background: #f8d7da; color: #dc3545; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .giftcard-list { margin-top: 0.5rem; }
-    .giftcard-row { box-shadow: 0 1px 6px rgba(25,55,109,0.04); border-left: 4px solid #19376d; }
+    .giftcard-row { box-shadow: 0 1px 6px rgba(26,147,138,0.04); border-left: 4px solid #1a938a; }
     .giftcard-status-badge.paid { background: #e6f4ea; color: #198754; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .giftcard-status-badge.pending { background: #e3f2fd; color: #0d6efd; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .giftcard-status-badge.declined { background: #f8d7da; color: #dc3545; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
@@ -244,12 +252,12 @@ if (isset($_SESSION['user_2fa'])) {
     <button class="sidebar-toggler" id="sidebarToggler" title="Toggle Sidebar"><span class="bi bi-list"></span></button>
     <ul class="nav flex-column">
       <li><a class="nav-link active" href="#"><span class="bi bi-house"></span> <span class="sidebar-label">Dashboard</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-bank"></span> <span class="sidebar-label">Bank Account</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-gift"></span> <span class="sidebar-label">Buy/Sell Giftcard</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-currency-bitcoin"></span> <span class="sidebar-label">Buy/Sell Bitcoin</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-life-preserver"></span> <span class="sidebar-label">Support</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-person"></span> <span class="sidebar-label">Account</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-shield-lock"></span> <span class="sidebar-label">Security</span></a></li>
+      <li><a class="nav-link" href="bank_account.php"><span class="bi bi-bank"></span> <span class="sidebar-label">Bank Account</span></a></li>
+      <li><a class="nav-link" href="giftcard_trade.php"><span class="bi bi-gift"></span> <span class="sidebar-label">Buy/Sell Giftcard</span></a></li>
+      <li><a class="nav-link" href="bitcoin_trade.php"><span class="bi bi-currency-bitcoin"></span> <span class="sidebar-label">Buy/Sell Bitcoin</span></a></li>
+      <li><a class="nav-link" href="support.php"><span class="bi bi-life-preserver"></span> <span class="sidebar-label">Support</span></a></li>
+      <li><a class="nav-link" href="account.php"><span class="bi bi-person"></span> <span class="sidebar-label">Account</span></a></li>
+      <li><a class="nav-link" href="security.php"><span class="bi bi-shield-lock"></span> <span class="sidebar-label">Security</span></a></li>
       <li><a class="nav-link" href="logout.php"><span class="bi bi-box-arrow-right"></span> <span class="sidebar-label">Logout</span></a></li>
     </ul>
   </nav>
@@ -280,6 +288,22 @@ if (isset($_SESSION['user_2fa'])) {
   <main class="main-content" id="mainContent">
     <!-- Dashboard Widgets -->
     <div class="row g-4 mb-2">
+      <div class="col-md-4">
+        <div class="widget-card gradient-blue d-flex align-items-center gap-3 p-3 h-100">
+          <span class="bi bi-wallet2 widget-icon"></span>
+          <div style="flex:1;">
+            <div class="widget-label d-flex align-items-center justify-content-between">
+              Wallet Balance
+              <button id="toggleBalanceBtn" class="btn btn-sm btn-outline-light ms-2" type="button" title="Show/Hide Balance" style="border-radius:50%;padding:2px 7px;">
+                <span id="balanceEye" class="bi bi-eye-slash"></span>
+              </button>
+            </div>
+            <div class="widget-value" id="walletBalance" style="letter-spacing:1px;">
+              ****
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="col-md-4">
         <div class="widget-card gradient-blue d-flex align-items-center gap-3 p-3 h-100">
           <span class="bi bi-arrow-down-circle-fill widget-icon"></span>
@@ -397,8 +421,11 @@ if (isset($_SESSION['user_2fa'])) {
         <div class="dashboard-card">
           <h5 class="mb-3"><span class="bi bi-bar-chart"></span> Live Crypto Market Prices</h5>
           <div class="crypto-widget-embed" style="min-height:90px;">
-            <!-- CoinGecko Widget: BTC, ETH, USDT -->
-            <iframe src="https://widgets.coingecko.com/coingecko-coin-price-marquee-widget?coins=bitcoin,ethereum,tether&currency=usd&backgroundColor=ffffff&locale=en" frameborder="0" style="width:100%;min-height:60px;border:none;" allowtransparency="true"></iframe>
+            <!-- Removed CoinGecko Widget to fix Access Denied error -->
+            <div style="color:#19376d;font-size:1.1rem;text-align:center;padding:24px 0;">
+              Live crypto prices are temporarily unavailable.<br>
+              Please check back later.
+            </div>
           </div>
         </div>
       </div>
@@ -446,6 +473,25 @@ if (isset($_SESSION['user_2fa'])) {
           });
       });
     }
+
+    // Wallet balance toggle
+    const walletBalance = document.getElementById('walletBalance');
+    const toggleBalanceBtn = document.getElementById('toggleBalanceBtn');
+    const balanceEye = document.getElementById('balanceEye');
+    let balanceVisible = false;
+    const actualBalance = '<?php echo number_format($wallet_balance, 2); ?>';
+    toggleBalanceBtn.addEventListener('click', function() {
+      balanceVisible = !balanceVisible;
+      if (balanceVisible) {
+        walletBalance.textContent = '$' + actualBalance;
+        balanceEye.classList.remove('bi-eye-slash');
+        balanceEye.classList.add('bi-eye');
+      } else {
+        walletBalance.textContent = '****';
+        balanceEye.classList.remove('bi-eye');
+        balanceEye.classList.add('bi-eye-slash');
+      }
+    });
 
     // Mobile sidebar toggle
     const mobileSidebarBtn = document.getElementById('mobileSidebarBtn');
