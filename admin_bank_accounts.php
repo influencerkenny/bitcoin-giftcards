@@ -236,13 +236,16 @@ $res->close();
     <div class="container-fluid widgets-container" style="margin-top: 6rem; margin-left: 5rem;">
       <div class="row">
         <div class="col-lg-9 col-12">
-          <div class="dashboard-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h4 class="mb-0"><span class="bi bi-bank"></span> Bank Accounts</h4>
-              <button class="btn btn-primary add-account-btn" data-bs-toggle="modal" data-bs-target="#addAccountModal"><span class="bi bi-plus"></span> Add Account</button>
+          <div class="dashboard-card" style="box-shadow: 0 8px 32px rgba(26,147,138,0.13); border-radius: 1.5rem; padding: 2.5rem 2rem 2rem 2rem;">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+              <div>
+                <h2 class="mb-1" style="font-weight: 800; color: #19376d;"><span class="bi bi-bank2 me-2" style="color:#1a938a;"></span>Bank Accounts</h2>
+                <div class="text-muted" style="font-size:1.1rem; font-weight: 500;">Manage all user bank accounts. Add, edit, or remove accounts as needed.</div>
+              </div>
+              <button class="btn btn-lg btn-primary add-account-btn shadow-sm px-4 py-2" style="font-weight:700; border-radius:2rem; font-size:1.15rem;" data-bs-toggle="modal" data-bs-target="#addAccountModal"><span class="bi bi-plus-circle me-2"></span>Add Account</button>
             </div>
             <!-- Tabs -->
-            <ul class="nav nav-tabs account-tabs" id="accountTabs" role="tablist">
+            <ul class="nav nav-tabs account-tabs mb-4" id="accountTabs" role="tablist">
               <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="tab-all" data-type="all" type="button" role="tab">All Accounts</button>
               </li>
@@ -254,6 +257,67 @@ $res->close();
               </li>
             </ul>
             <div class="table-responsive">
+              <style>
+                .admin-table {
+                  border-radius: 1.1rem;
+                  overflow: hidden;
+                  box-shadow: 0 2px 16px rgba(26,147,138,0.10);
+                  background: #fff;
+                }
+                .admin-table th {
+                  position: sticky;
+                  top: 0;
+                  z-index: 2;
+                  background: #1a938a !important;
+                  color: #fff;
+                  font-weight: 700;
+                  font-size: 1.08rem;
+                  border-top: none;
+                }
+                .admin-table tr {
+                  transition: background 0.13s;
+                }
+                .admin-table tbody tr:hover {
+                  background: #e6f4ea !important;
+                }
+                .admin-table td {
+                  font-size: 1.05rem;
+                  border-bottom: 1px solid #f1f1f1;
+                }
+                .admin-table td, .admin-table th {
+                  padding-top: 0.85rem;
+                  padding-bottom: 0.85rem;
+                  padding-left: 1.1rem;
+                  padding-right: 1.1rem;
+                }
+                .admin-table .badge {
+                  font-size: 1em;
+                  border-radius: 0.7em;
+                  background: #ffbf3f;
+                  color: #19376d;
+                  font-weight: 600;
+                  padding: 0.5em 1em;
+                }
+                .admin-table .btn {
+                  border-radius: 2rem;
+                  font-weight: 600;
+                }
+                .admin-table .btn-outline-primary {
+                  border-color: #1a938a;
+                  color: #1a938a;
+                }
+                .admin-table .btn-outline-primary:hover {
+                  background: #1a938a;
+                  color: #fff;
+                }
+                .admin-table .btn-danger {
+                  background: #dc3545;
+                  border: none;
+                }
+                .admin-table .btn-danger:hover {
+                  background: #b52a37;
+                }
+              </style>
               <!-- Table for desktop -->
               <table class="table admin-table align-middle d-none d-md-table" id="accountsTable">
                 <thead>
@@ -278,7 +342,7 @@ $res->close();
                       $recent = (strtotime($acc['date_updated']) > strtotime('-48 hours'));
                     }
                   ?>
-                  <tr class="account-row" data-type="<?= htmlspecialchars($acc['account_type']) ?>" <?php if ($recent) echo 'class="recently-updated"'; ?>>
+                  <tr class="account-row<?php if ($recent) echo ' recently-updated'; ?>" data-type="<?= htmlspecialchars($acc['account_type']) ?>">
                     <td>
                       <span class="user-popover" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="<?= htmlspecialchars($acc['user_email']) ?>">
                         <strong><?= htmlspecialchars($acc['user_name']) ?></strong>
@@ -288,16 +352,16 @@ $res->close();
                     <td><?= htmlspecialchars($acc['account_name']) ?></td>
                     <td><?= htmlspecialchars($acc['account_number']) ?></td>
                     <td><?= htmlspecialchars($acc['bank_name']) ?></td>
-                    <td><span class="badge bg-info text-dark"><?= htmlspecialchars(ucfirst($acc['account_type'])) ?></span></td>
+                    <td><span class="badge"><span class="bi bi-wallet2 me-1"></span><?= htmlspecialchars(ucfirst($acc['account_type'])) ?></span></td>
                     <td><?= htmlspecialchars($acc['iban']) ?></td>
                     <td><?= htmlspecialchars($acc['swift']) ?></td>
                     <td><?= htmlspecialchars($acc['date_created']) ?></td>
                     <td><?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></td>
                     <td>
-                      <button class="btn btn-sm btn-outline-primary" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')"><span class="bi bi-pencil"></span></button>
+                      <button class="btn btn-sm btn-outline-primary me-1" title="Edit" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')"><span class="bi bi-pencil"></span></button>
                       <form method="post" style="display:inline;" onsubmit="return confirm('Delete this account?');">
                         <input type="hidden" name="delete_account_id" value="<?= $acc['id'] ?>">
-                        <button type="submit" class="btn btn-sm btn-danger"><span class="bi bi-trash"></span></button>
+                        <button type="submit" class="btn btn-sm btn-danger" title="Delete"><span class="bi bi-trash"></span></button>
                       </form>
                     </td>
                   </tr>
