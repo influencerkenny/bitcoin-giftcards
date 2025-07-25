@@ -18,7 +18,31 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
   <link rel="stylesheet" href="css/style.css">
   <style>
-    body { background: linear-gradient(252deg, #1a938a 0%, rgba(26, 147, 138, 0) 100.44%); min-height: 100vh; color: #19376d; }
+    html, body {
+      height: 100%;
+    }
+    body {
+      background: linear-gradient(252deg, #1a938a 0%, rgba(26, 147, 138, 0) 100.44%);
+      min-height: 100vh;
+      color: #19376d;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .main-content {
+      flex: 1 0 auto;
+    }
+    footer {
+      background: #fff;
+      border-top: 1px solid #e9ecef;
+      color: #888;
+      font-size: 1rem;
+      text-align: center;
+      padding: 1.2rem 0 0.7rem 0;
+      margin-top: 2rem;
+      flex-shrink: 0;
+      width: 100%;
+    }
   </style>
 </head>
 <body>

@@ -62,9 +62,17 @@ $res->close();
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
   <style>
-    body {
-      background: linear-gradient(252deg, #1a938a 0%, rgba(26, 147, 138, 0) 100.44%);
+    html, body {
+      height: 100%;
       min-height: 100vh;
+    }
+    body {
+      display: flex !important;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: stretch !important;
+      justify-content: flex-start !important;
+      background: linear-gradient(252deg, #1a938a 0%, rgba(26, 147, 138, 0) 100.44%);
       color: #19376d;
     }
     .dashboard-header {
@@ -134,6 +142,7 @@ $res->close();
       min-height: 100vh;
       transition: margin-left 0.2s;
       padding-top: 80px;
+      flex: 1 0 auto;
     }
     .sidebar.collapsed ~ .main-content { margin-left: 60px; }
     @media (max-width: 991px) {
@@ -166,6 +175,7 @@ $res->close();
       text-align: center;
       padding: 1.2rem 0 0.7rem 0;
       margin-top: 2rem;
+      flex-shrink: 0;
     }
     .container { max-width: 600px; margin: 48px auto; background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(26,147,138,0.08); padding: 32px 24px; }
     h2 { color: #1a938a; margin-bottom: 24px; }
@@ -216,7 +226,7 @@ $res->close();
     <ul class="nav flex-column">
       <li><a class="nav-link" href="dashboard.php"><span class="bi bi-house"></span> <span class="sidebar-label">Dashboard</span></a></li>
       <li><a class="nav-link active" href="bank_account.php"><span class="bi bi-bank"></span> <span class="sidebar-label">Bank Account</span></a></li>
-      <li><a class="nav-link" href="giftcard_trade.php"><span class="bi bi-gift"></span> <span class="sidebar-label">Buy/Sell Giftcard</span></a></li>
+      <li><a class="nav-link" href="giftcard_trade.php"><span class="bi bi-gift"></span> <span class="sidebar-label">Sell Giftcard</span></a></li>
       <li><a class="nav-link" href="bitcoin_trade.php"><span class="bi bi-currency-bitcoin"></span> <span class="sidebar-label">Buy/Sell Bitcoin</span></a></li>
       <li><a class="nav-link" href="support.php"><span class="bi bi-life-preserver"></span> <span class="sidebar-label">Support</span></a></li>
       <li><a class="nav-link" href="account.php"><span class="bi bi-person"></span> <span class="sidebar-label">Account</span></a></li>
@@ -289,14 +299,16 @@ $res->close();
                 <span class="text-muted" style="font-size:0.95em;">Created: <?= htmlspecialchars($acc['date_created']) ?></span>
               </div>
               <div class="row g-2">
-                <div class="col-12 col-md-6"><strong>Account Name:</strong> <?= htmlspecialchars($acc['account_name']) ?></div>
-                <div class="col-12 col-md-6"><strong>Account Number:</strong> <?= htmlspecialchars($acc['account_number']) ?></div>
-                <div class="col-12 col-md-6"><strong>Bank Name:</strong> <?= htmlspecialchars($acc['bank_name']) ?></div>
+                <div class="col-12 col-md-4"><strong>Account Name:</strong> <?= htmlspecialchars($acc['account_name']) ?></div>
+                <div class="col-12 col-md-4"><strong>Account Number:</strong> <?= htmlspecialchars($acc['account_number']) ?></div>
+                <div class="col-12 col-md-4"><strong>Bank Name:</strong> <?= htmlspecialchars($acc['bank_name']) ?></div>
+              </div>
+              <div class="row g-2 mt-1">
                 <?php if ($acc['account_type'] === 'international'): ?>
-                  <div class="col-12 col-md-6"><strong>IBAN:</strong> <?= htmlspecialchars($acc['iban']) ?></div>
-                  <div class="col-12 col-md-6"><strong>Swift:</strong> <?= htmlspecialchars($acc['swift']) ?></div>
+                  <div class="col-12 col-md-4"><strong>IBAN:</strong> <?= htmlspecialchars($acc['iban']) ?></div>
+                  <div class="col-12 col-md-4"><strong>Swift:</strong> <?= htmlspecialchars($acc['swift']) ?></div>
                 <?php endif; ?>
-                <div class="col-12 col-md-6"><strong>Date Updated:</strong> <?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></div>
+                <div class="col-12 col-md-4"><strong>Date Updated:</strong> <?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></div>
               </div>
               <button class="btn btn-sm btn-outline-primary mt-3" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')">Edit</button>
             </div>
