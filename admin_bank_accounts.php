@@ -83,7 +83,6 @@ $res->close();
     .admin-sidebar-toggler { background: none; border: none; color: #fff; font-size: 1.5rem; margin-bottom: 2rem; margin-left: 0.5rem; cursor: pointer; align-self: flex-end; transition: color 0.2s; }
     .admin-main-content { margin-left: 230px; padding: 2rem 2rem 1.5rem 2rem; min-height: 100vh; transition: margin-left 0.2s; flex: 1 0 auto; }
     .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 64px; }
-    @media (max-width: 991px) { .admin-header { position: fixed; top: 0; left: 0; width: 100vw; z-index: 110; } .admin-sidebar { position: fixed; left: -230px; top: 0; height: 100vh; z-index: 120; } .admin-sidebar.open { left: 0; } #adminSidebarOverlay { display: none; } #adminSidebarOverlay.active { display: block; } .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 60px; } .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 0; } }
     .dashboard-card { background: #fff; border-radius: 1.2rem; box-shadow: 0 4px 24px rgba(26,147,138,0.08); padding: 1.5rem 1.2rem; margin-bottom: 2rem; transition: box-shadow 0.2s; }
     .dashboard-card:hover { box-shadow: 0 6px 32px rgba(26,147,138,0.12); }
     footer { background: #fff; border-top: 1px solid #e9ecef; color: #888; font-size: 1rem; text-align: center; padding: 1.2rem 0 0.7rem 0; margin-top: 2rem; flex-shrink: 0; width: 100%; }
@@ -98,7 +97,102 @@ $res->close();
     .admin-table .btn-primary:hover { background: #0a174e; }
     .admin-table .btn-outline-primary { border-color: #1a938a; color: #1a938a; }
     .admin-table .btn-outline-primary:hover { background: #1a938a; color: #fff; }
-    .add-account-btn { margin-bottom: 1.5rem; }
+    .add-account-btn { display: block; margin-bottom: 1.5rem; }
+    /* Sticky sidebar for Add Account */
+    .sticky-add-account {
+      position: fixed;
+      top: 80px;
+      right: 32px;
+      width: 340px;
+      z-index: 200;
+      background: #fff;
+      border-radius: 1.2rem;
+      box-shadow: 0 4px 24px rgba(26,147,138,0.13);
+      padding: 1.5rem 1.2rem;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 1px solid #e9ecef;
+      display: block;
+    }
+    @media (max-width: 991px) {
+      .admin-sidebar {
+        left: -230px !important;
+        transition: left 0.2s;
+      }
+      .admin-sidebar.open {
+        left: 0 !important;
+        box-shadow: 2px 0 16px rgba(26,147,138,0.18);
+      }
+      #adminSidebarOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 99;
+        background: rgba(10,23,78,0.35);
+        transition: opacity 0.2s;
+      }
+      #adminSidebarOverlay.active {
+        display: block;
+      }
+      .admin-sidebar-toggler, .btn.btn-outline-primary.d-lg-none {
+        display: block !important;
+      }
+      .admin-main-content {
+        margin-left: 0 !important;
+        padding: 1rem 0.3rem 1.5rem 0.3rem !important;
+        min-width: 0;
+      }
+      .container-fluid.widgets-container {
+        margin-left: 0 !important;
+        padding-left: 0.2rem !important;
+        padding-right: 0.2rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      .dashboard-card {
+        width: 100% !important;
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-top: 1.2rem !important;
+        padding: 1rem 0.5rem !important;
+      }
+      .modal-dialog {
+        max-width: 98vw !important;
+        margin: 0.5rem auto !important;
+      }
+    }
+    @media (max-width: 600px) {
+      .admin-header {
+        padding: 0.5rem 0.5rem !important;
+      }
+      .dashboard-card {
+        padding: 0.7rem 0.2rem !important;
+      }
+      .modal-content {
+        padding: 0.5rem 0.2rem !important;
+      }
+      .bank-account-card .card-body {
+        padding: 0.8rem 0.3rem !important;
+      }
+    }
+    /* Highlight recently updated */
+    .recently-updated { background: #fffbe6 !important; }
+    /* Tabs */
+    .account-tabs { margin-bottom: 1.5rem; }
+    .account-tabs .nav-link.active { background: #1a938a; color: #fff; }
+    .container-fluid.widgets-container {
+      margin-top: 6rem !important;
+      display: flex;
+      justify-content: center;
+    }
+    .dashboard-card {
+      width: 110%;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 10rem;
+    }
   </style>
 </head>
 <body>
@@ -114,7 +208,7 @@ $res->close();
       <li><a class="nav-link" href="#"><span class="bi bi-box-arrow-right"></span> <span class="sidebar-label">Logout</span></a></li>
     </ul>
   </nav>
-  <div id="adminSidebarOverlay" style="display:none;position:fixed;inset:0;z-index:99;background:rgba(10,23,78,0.35);transition:opacity 0.2s;"></div>
+  <div id="adminSidebarOverlay"></div>
   <!-- Header -->
   <header class="admin-header">
     <div class="d-flex align-items-center gap-3 flex-grow-1">
@@ -138,118 +232,152 @@ $res->close();
     </div>
   </header>
   <!-- Main Content -->
-  <main class="admin-main-content" id="adminMainContent">
-    <div class="container-fluid px-0 widgets-container" style="margin-top: 4rem;">
-      <div class="dashboard-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h4 class="mb-0"><span class="bi bi-bank"></span> Bank Accounts</h4>
-          <button class="btn btn-primary add-account-btn" data-bs-toggle="modal" data-bs-target="#addAccountModal"><span class="bi bi-plus"></span> Add Account</button>
-        </div>
-        <div class="table-responsive">
-          <!-- Table for desktop -->
-          <table class="table admin-table align-middle d-none d-md-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Account Name</th>
-                <th>Account Number</th>
-                <th>Bank Name</th>
-                <th>Type</th>
-                <th>IBAN</th>
-                <th>Swift</th>
-                <th>Date Created</th>
-                <th>Date Updated</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach (
-                $accounts as $acc): ?>
-              <tr>
-                <td><strong><?= htmlspecialchars($acc['user_name']) ?></strong><br><span class="text-muted" style="font-size:0.95em;">(<?= htmlspecialchars($acc['user_email']) ?>)</span></td>
-                <td><?= htmlspecialchars($acc['account_name']) ?></td>
-                <td><?= htmlspecialchars($acc['account_number']) ?></td>
-                <td><?= htmlspecialchars($acc['bank_name']) ?></td>
-                <td><span class="badge bg-info text-dark"><?= htmlspecialchars(ucfirst($acc['account_type'])) ?></span></td>
-                <td><?= htmlspecialchars($acc['iban']) ?></td>
-                <td><?= htmlspecialchars($acc['swift']) ?></td>
-                <td><?= htmlspecialchars($acc['date_created']) ?></td>
-                <td><?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></td>
-                <td>
-                  <button class="btn btn-sm btn-outline-primary" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')"><span class="bi bi-pencil"></span></button>
-                  <form method="post" style="display:inline;" onsubmit="return confirm('Delete this account?');">
-                    <input type="hidden" name="delete_account_id" value="<?= $acc['id'] ?>">
-                    <button type="submit" class="btn btn-sm btn-danger"><span class="bi bi-trash"></span></button>
-                  </form>
-                </td>
-              </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-          <!-- Card view for mobile -->
-          <div class="d-block d-md-none">
-            <style>
-              .bank-account-card {
-                background: linear-gradient(252deg, #f8fafd 0%, #e6f4ea 100.44%);
-                border-radius: 1.1rem;
-                box-shadow: 0 2px 16px rgba(26,147,138,0.10);
-                border: none;
-                margin-bottom: 1.2rem;
-              }
-              .bank-account-card .card-body {
-                padding: 1.2rem 1rem;
-              }
-              .bank-account-card .card-title {
-                color: #1a938a;
-                font-weight: 700;
-                font-size: 1.08rem;
-                margin-bottom: 0.4rem;
-              }
-              .bank-account-card .badge {
-                background: #ffbf3f;
-                color: #19376d;
-                font-weight: 600;
-              }
-              .bank-account-card .btn-outline-primary {
-                border-color: #1a938a;
-                color: #1a938a;
-              }
-              .bank-account-card .btn-outline-primary:hover {
-                background: #1a938a;
-                color: #fff;
-              }
-              .bank-account-card .btn-danger {
-                background: #dc3545;
-                border: none;
-              }
-              .bank-account-card .btn-danger:hover {
-                background: #b52a37;
-              }
-            </style>
-            <?php foreach ($accounts as $acc): ?>
-              <div class="card bank-account-card">
-                <div class="card-body">
-                  <div class="card-title mb-2"><strong><?= htmlspecialchars($acc['user_name']) ?></strong> <span class="text-muted" style="font-size:0.95em;">(<?= htmlspecialchars($acc['user_email']) ?>)</span></div>
-                  <div><b>Account Name:</b> <?= htmlspecialchars($acc['account_name']) ?></div>
-                  <div><b>Account Number:</b> <?= htmlspecialchars($acc['account_number']) ?></div>
-                  <div><b>Bank Name:</b> <?= htmlspecialchars($acc['bank_name']) ?></div>
-                  <div><b>Type:</b> <span class="badge"><?= htmlspecialchars(ucfirst($acc['account_type'])) ?></span></div>
-                  <?php if ($acc['iban']): ?><div><b>IBAN:</b> <?= htmlspecialchars($acc['iban']) ?></div><?php endif; ?>
-                  <?php if ($acc['swift']): ?><div><b>Swift:</b> <?= htmlspecialchars($acc['swift']) ?></div><?php endif; ?>
-                  <div><b>Date Created:</b> <?= htmlspecialchars($acc['date_created']) ?></div>
-                  <div><b>Date Updated:</b> <?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></div>
-                  <div class="mt-2">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')"><span class="bi bi-pencil"></span></button>
-                    <form method="post" style="display:inline;" onsubmit="return confirm('Delete this account?');">
-                      <input type="hidden" name="delete_account_id" value="<?= $acc['id'] ?>">
-                      <button type="submit" class="btn btn-sm btn-danger"><span class="bi bi-trash"></span></button>
-                    </form>
+  <main class="admin-main-content" id="adminMainContent" style="top: 10px;">
+    <div class="container-fluid widgets-container" style="margin-top: 6rem; margin-left: 5rem;">
+      <div class="row">
+        <div class="col-lg-9 col-12">
+          <div class="dashboard-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="mb-0"><span class="bi bi-bank"></span> Bank Accounts</h4>
+              <button class="btn btn-primary add-account-btn" data-bs-toggle="modal" data-bs-target="#addAccountModal"><span class="bi bi-plus"></span> Add Account</button>
+            </div>
+            <!-- Tabs -->
+            <ul class="nav nav-tabs account-tabs" id="accountTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-all" data-type="all" type="button" role="tab">All Accounts</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-local" data-type="local" type="button" role="tab">Local Accounts</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-international" data-type="international" type="button" role="tab">International Accounts</button>
+              </li>
+            </ul>
+            <div class="table-responsive">
+              <!-- Table for desktop -->
+              <table class="table admin-table align-middle d-none d-md-table" id="accountsTable">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Account Name</th>
+                    <th>Account Number</th>
+                    <th>Bank Name</th>
+                    <th>Type</th>
+                    <th>IBAN</th>
+                    <th>Swift</th>
+                    <th>Date Created</th>
+                    <th>Date Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($accounts as $acc): ?>
+                  <?php
+                    $recent = false;
+                    if ($acc['date_updated']) {
+                      $recent = (strtotime($acc['date_updated']) > strtotime('-48 hours'));
+                    }
+                  ?>
+                  <tr class="account-row" data-type="<?= htmlspecialchars($acc['account_type']) ?>" <?php if ($recent) echo 'class="recently-updated"'; ?>>
+                    <td>
+                      <span class="user-popover" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-content="<?= htmlspecialchars($acc['user_email']) ?>">
+                        <strong><?= htmlspecialchars($acc['user_name']) ?></strong>
+                      </span>
+                      <br><span class="text-muted" style="font-size:0.95em;">(<?= htmlspecialchars($acc['user_email']) ?>)</span>
+                    </td>
+                    <td><?= htmlspecialchars($acc['account_name']) ?></td>
+                    <td><?= htmlspecialchars($acc['account_number']) ?></td>
+                    <td><?= htmlspecialchars($acc['bank_name']) ?></td>
+                    <td><span class="badge bg-info text-dark"><?= htmlspecialchars(ucfirst($acc['account_type'])) ?></span></td>
+                    <td><?= htmlspecialchars($acc['iban']) ?></td>
+                    <td><?= htmlspecialchars($acc['swift']) ?></td>
+                    <td><?= htmlspecialchars($acc['date_created']) ?></td>
+                    <td><?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')"><span class="bi bi-pencil"></span></button>
+                      <form method="post" style="display:inline;" onsubmit="return confirm('Delete this account?');">
+                        <input type="hidden" name="delete_account_id" value="<?= $acc['id'] ?>">
+                        <button type="submit" class="btn btn-sm btn-danger"><span class="bi bi-trash"></span></button>
+                      </form>
+                    </td>
+                  </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+              <!-- Card view for mobile -->
+              <div class="d-block d-md-none">
+                <style>
+                  .bank-account-card {
+                    background: linear-gradient(252deg, #f8fafd 0%, #e6f4ea 100.44%);
+                    border-radius: 1.1rem;
+                    box-shadow: 0 2px 16px rgba(26,147,138,0.10);
+                    border: none;
+                    margin-bottom: 1.2rem;
+                  }
+                  .bank-account-card .card-body {
+                    padding: 1.2rem 1rem;
+                  }
+                  .bank-account-card .card-title {
+                    color: #1a938a;
+                    font-weight: 700;
+                    font-size: 1.08rem;
+                    margin-bottom: 0.4rem;
+                  }
+                  .bank-account-card .badge {
+                    background: #ffbf3f;
+                    color: #19376d;
+                    font-weight: 600;
+                  }
+                  .bank-account-card .btn-outline-primary {
+                    border-color: #1a938a;
+                    color: #1a938a;
+                  }
+                  .bank-account-card .btn-outline-primary:hover {
+                    background: #1a938a;
+                    color: #fff;
+                  }
+                  .bank-account-card .btn-danger {
+                    background: #dc3545;
+                    border: none;
+                  }
+                  .bank-account-card .btn-danger:hover {
+                    background: #b52a37;
+                  }
+                  .recently-updated { background: #fffbe6 !important; }
+                </style>
+                <?php foreach ($accounts as $acc): ?>
+                  <?php
+                    $recent = false;
+                    if ($acc['date_updated']) {
+                      $recent = (strtotime($acc['date_updated']) > strtotime('-48 hours'));
+                    }
+                  ?>
+                  <div class="card bank-account-card<?php if ($recent) echo ' recently-updated'; ?>">
+                    <div class="card-body">
+                      <div class="card-title mb-2"><strong><?= htmlspecialchars($acc['user_name']) ?></strong> <span class="text-muted" style="font-size:0.95em;">(<?= htmlspecialchars($acc['user_email']) ?>)</span></div>
+                      <div><b>Account Name:</b> <?= htmlspecialchars($acc['account_name']) ?></div>
+                      <div><b>Account Number:</b> <?= htmlspecialchars($acc['account_number']) ?></div>
+                      <div><b>Bank Name:</b> <?= htmlspecialchars($acc['bank_name']) ?></div>
+                      <div><b>Type:</b> <span class="badge"><?= htmlspecialchars(ucfirst($acc['account_type'])) ?></span></div>
+                      <?php if ($acc['iban']): ?><div><b>IBAN:</b> <?= htmlspecialchars($acc['iban']) ?></div><?php endif; ?>
+                      <?php if ($acc['swift']): ?><div><b>Swift:</b> <?= htmlspecialchars($acc['swift']) ?></div><?php endif; ?>
+                      <div><b>Date Created:</b> <?= htmlspecialchars($acc['date_created']) ?></div>
+                      <div><b>Date Updated:</b> <?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></div>
+                      <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')"><span class="bi bi-pencil"></span></button>
+                        <form method="post" style="display:inline;" onsubmit="return confirm('Delete this account?');">
+                          <input type="hidden" name="delete_account_id" value="<?= $acc['id'] ?>">
+                          <button type="submit" class="btn btn-sm btn-danger"><span class="bi bi-trash"></span></button>
+                        </form>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                <?php endforeach; ?>
               </div>
-            <?php endforeach; ?>
+            </div>
           </div>
         </div>
+        <!-- Removed sticky sidebar, Add Account button is at the top as modal trigger -->
       </div>
     </div>
     <!-- Add Account Modal -->
@@ -364,12 +492,14 @@ $res->close();
     const adminMobileSidebarBtn = document.getElementById('adminMobileSidebarBtn');
     const adminSidebarOverlay = document.getElementById('adminSidebarOverlay');
     const adminMainContent = document.getElementById('adminMainContent');
+    // Desktop toggle
     if (adminSidebarToggler) {
       adminSidebarToggler.addEventListener('click', function() {
         adminSidebar.classList.toggle('collapsed');
         document.querySelector('.admin-main-content').classList.toggle('collapsed');
       });
     }
+    // Mobile sidebar toggle
     if (adminMobileSidebarBtn) {
       adminMobileSidebarBtn.addEventListener('click', function() {
         adminSidebar.classList.add('open');
@@ -382,6 +512,7 @@ $res->close();
         adminSidebarOverlay.classList.remove('active');
       });
     }
+    // Close sidebar when clicking outside (on overlay or main content)
     if (adminMainContent) {
       adminMainContent.addEventListener('click', function() {
         if (window.innerWidth < 992 && adminSidebar.classList.contains('open')) {
@@ -390,6 +521,14 @@ $res->close();
         }
       });
     }
+    // Highlight active nav-link
+    document.querySelectorAll('.admin-sidebar .nav-link').forEach(link => {
+      if (link.href === window.location.href || link.getAttribute('href') === window.location.pathname.split('/').pop()) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
     // Add Account Modal logic
     function toggleAddAccountType() {
       var type = document.querySelector('#addAccountForm input[name="account_type"]:checked').value;
@@ -421,6 +560,32 @@ $res->close();
       document.getElementById('edit_iban_group').style.display = (type === 'international') ? '' : 'none';
       document.getElementById('edit_swift_group').style.display = (type === 'international') ? '' : 'none';
     }
+    // Tabs filter logic
+    document.querySelectorAll('.account-tabs .nav-link').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.account-tabs .nav-link').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const type = this.getAttribute('data-type');
+        document.querySelectorAll('#accountsTable tbody tr.account-row').forEach(row => {
+          if (type === 'all' || row.getAttribute('data-type') === type) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      });
+    });
+    // User popover
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('.user-popover'));
+    popoverTriggerList.forEach(function (popoverTriggerEl) {
+      new bootstrap.Popover(popoverTriggerEl, {
+        trigger: 'hover focus',
+        placement: 'top',
+        html: true,
+        content: popoverTriggerEl.getAttribute('data-bs-content')
+      });
+    });
+    // (Removed sticky sidebar logic)
   </script>
 </body>
 </html> 

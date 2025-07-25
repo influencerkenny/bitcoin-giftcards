@@ -118,6 +118,7 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
       min-height: 100vh;
       transition: margin-left 0.2s;
       flex: 1 0 auto;
+      margin-top: 7rem;
     }
     .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 64px; }
     @media (max-width: 991px) {
