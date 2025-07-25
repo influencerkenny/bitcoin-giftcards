@@ -10,7 +10,7 @@ $user_name = isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_na
 
 // Fetch all active giftcards
 $giftcards = [];
-$res = $db->query("SELECT id, card_name, rate, image_url FROM giftcard_rates WHERE status='active' ORDER BY card_name ASC");
+$res = $db->query("SELECT id, card_name, rate, image_url, value_range, value FROM giftcard_rates WHERE status='active' ORDER BY card_name ASC");
 while ($row = $res->fetch_assoc()) {
   $giftcards[] = $row;
 }
@@ -20,17 +20,22 @@ $res->close();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_giftcard'])) {
   $card_id = intval($_POST['card_id']);
   $amount = floatval($_POST['amount']);
-  $note = trim($_POST['note']);
   // Get card name for record
   $stmt = $db->prepare('SELECT card_name FROM giftcard_rates WHERE id=?');
+  if (!$stmt) {
+    die('Database error: Failed to prepare statement for card name. Error: ' . $db->error);
+  }
   $stmt->bind_param('i', $card_id);
   $stmt->execute();
   $stmt->bind_result($card_name);
   $stmt->fetch();
   $stmt->close();
   // Insert trade (status: Processing)
-  $stmt = $db->prepare('INSERT INTO giftcard_transactions (user_id, card_type, amount, status, date, note) VALUES (?, ?, ?, "Processing", NOW(), ?)');
-  $stmt->bind_param('isds', $user_id, $card_name, $amount, $note);
+  $stmt = $db->prepare('INSERT INTO giftcard_transactions (user_id, card_type, amount, status, date) VALUES (?, ?, ?, "Processing", NOW())');
+  if (!$stmt) {
+    die('Database error: Failed to prepare statement for trade insert. Error: ' . $db->error);
+  }
+  $stmt->bind_param('isd', $user_id, $card_name, $amount);
   $stmt->execute();
   $stmt->close();
   header('Location: giftcard_trade.php');
@@ -38,16 +43,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_giftcard'])) {
 }
 // Fetch user trade history
 $trade_history = [];
-$stmt = $db->prepare('SELECT card_type, amount, date, status FROM giftcard_transactions WHERE user_id = ? ORDER BY date DESC');
+// Also fetch the rate for each card_type
+$stmt = $db->prepare('SELECT t.card_type, t.amount, t.date, t.status, r.rate FROM giftcard_transactions t LEFT JOIN giftcard_rates r ON t.card_type = r.card_name WHERE t.user_id = ? ORDER BY t.date DESC');
+if (!$stmt) {
+  die('Database error: Failed to prepare statement for trade history. Error: ' . $db->error);
+}
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
-$stmt->bind_result($card_type, $amount, $date, $status);
+$stmt->bind_result($card_type, $amount, $date, $status, $rate);
 while ($stmt->fetch()) {
   $trade_history[] = [
     'card_type' => $card_type,
     'amount' => $amount,
     'date' => $date,
-    'status' => $status
+    'status' => $status,
+    'rate' => $rate
   ];
 }
 $stmt->close();
@@ -160,6 +170,36 @@ $stmt->close();
       .container { padding: 12px 2px; margin: 16px 2px; }
       .btn-primary { width: 100%; font-size: 1.05rem; }
       .form-group input, .form-group select { font-size: 1.05rem; }
+      .trade-history-table { display: none; }
+      .trade-history-cards { display: block; }
+      .trade-history-card {
+        background: linear-gradient(252deg, #f8fafd 0%, #e6f4ea 100.44%);
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(26,147,138,0.08);
+        margin-bottom: 1.1rem;
+        padding: 1.1rem 1.2rem 0.9rem 1.2rem;
+        color: #19376d;
+      }
+      .trade-history-card .card-title {
+        font-weight: 700;
+        color: #1a938a;
+        font-size: 1.08rem;
+        margin-bottom: 0.3rem;
+      }
+      .trade-history-card .trade-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.3rem;
+        font-size: 0.99rem;
+      }
+      .trade-history-card .badge {
+        font-size: 1em;
+        min-width: 110px;
+      }
+    }
+    @media (min-width: 601px) {
+      .trade-history-cards { display: none; }
+      .trade-history-table { display: block; }
     }
     footer {
       background: #fff;
@@ -221,33 +261,36 @@ $stmt->close();
   <!-- Main Content -->
   <main class="main-content" id="mainContent">
     <div class="container">
-      <h2><i class="bi bi-gift"></i> Buy/Sell Giftcard</h2>
-      <div class="mb-4">
-        <div class="list-group list-group-flush">
-          <?php foreach ($giftcards as $card): ?>
-            <div class="list-group-item d-flex align-items-center gap-3 px-0 py-3 border-0" style="background:transparent;">
-              <img src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="<?php echo htmlspecialchars($card['card_name']); ?>" style="width:48px;height:48px;object-fit:cover;border-radius:0.7rem;box-shadow:0 2px 8px rgba(25,55,109,0.08);">
-              <div class="flex-grow-1">
-                <div class="fw-semibold" style="color:#19376d;font-size:1.08rem;line-height:1.1;">
-                  <?php echo htmlspecialchars($card['card_name']); ?>
-                </div>
-                <div class="text-muted" style="font-size:1.01rem;">₦<?php echo htmlspecialchars($card['rate']); ?></div>
-              </div>
-              <button class="btn btn-primary px-4" style="border-radius:0.7rem;font-weight:600;" data-bs-toggle="modal" data-bs-target="#tradeModal" data-card-id="<?php echo $card['id']; ?>" data-card-name="<?php echo htmlspecialchars($card['card_name']); ?>" data-card-rate="<?php echo htmlspecialchars($card['rate']); ?>">Trade</button>
+      <h2 class="mb-4" style="color:#1a938a;font-weight:800;"><i class="bi bi-gift"></i> Sell Giftcards</h2>
+      <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+        <?php foreach ($giftcards as $card): ?>
+        <div class="col">
+          <div class="card h-100 shadow-sm border-0 giftcard-tile">
+            <div class="card-body d-flex flex-column align-items-center justify-content-center text-center p-4">
+              <img src="<?php echo htmlspecialchars($card['image_url']); ?>" alt="<?php echo htmlspecialchars($card['card_name']); ?>" style="width:64px;height:64px;object-fit:cover;border-radius:0.7rem;box-shadow:0 2px 8px rgba(25,55,109,0.08);margin-bottom:1rem;">
+              <h5 class="card-title mb-1" style="font-weight:700;color:#19376d;font-size:1.15rem;"> <?php echo htmlspecialchars($card['card_name']); ?> </h5>
+              <div class="mb-1 text-muted" style="font-size:1.08rem;">₦<?php echo htmlspecialchars($card['rate']); ?> <span style="font-size:0.97rem;">per USD</span></div>
+              <?php if (!empty($card['value_range'])): ?>
+                <div class="mb-2 text-secondary" style="font-size:1.01rem;">Value: <?php echo htmlspecialchars($card['value_range']); ?></div>
+              <?php elseif (!empty($card['value'])): ?>
+                <div class="mb-2 text-secondary" style="font-size:1.01rem;">Value: $<?php echo htmlspecialchars($card['value']); ?></div>
+              <?php endif; ?>
+              <button class="btn btn-primary px-4 mt-auto" style="border-radius:1.5rem;font-weight:700;box-shadow:0 2px 8px rgba(26,147,138,0.10);" data-bs-toggle="modal" data-bs-target="#tradeModal" data-card-id="<?php echo $card['id']; ?>" data-card-name="<?php echo htmlspecialchars($card['card_name']); ?>" data-card-rate="<?php echo htmlspecialchars($card['rate']); ?>">Trade</button>
             </div>
-          <?php endforeach; ?>
+          </div>
         </div>
+        <?php endforeach; ?>
       </div>
       <!-- Trade Modal -->
       <div class="modal fade" id="tradeModal" tabindex="-1" aria-labelledby="tradeModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-          <div class="modal-content">
+          <div class="modal-content" style="border-radius:1.2rem;">
             <form method="post" autocomplete="off">
-              <div class="modal-header">
+              <div class="modal-header" style="border-radius:1.2rem 1.2rem 0 0;">
                 <h5 class="modal-title" id="tradeModalLabel">Trade Giftcard</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
-              <div class="modal-body">
+              <div class="modal-body p-4">
                 <input type="hidden" name="card_id" id="modal_card_id">
                 <div class="mb-3">
                   <label for="modal_card_name" class="form-label">Giftcard</label>
@@ -262,11 +305,11 @@ $stmt->close();
                   <input type="number" class="form-control" name="amount" id="modal_amount" min="1" step="0.01" required>
                 </div>
                 <div class="mb-3">
-                  <label for="note" class="form-label">Note (optional)</label>
-                  <textarea class="form-control" name="note" id="modal_note" rows="2"></textarea>
+                  
+                  <div id="youGetValue" style="font-weight:700;color:#1a938a;font-size:1.1rem;">You Get: ₦0</div>
                 </div>
               </div>
-              <div class="modal-footer">
+              <div class="modal-footer" style="border-radius:0 0 1.2rem 1.2rem;">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="submit" class="btn btn-primary" name="trade_giftcard" value="1">Place Trade</button>
               </div>
@@ -276,30 +319,63 @@ $stmt->close();
       </div>
       <!-- Trade History -->
       <div class="mt-5">
-        <h5 class="mb-3"><span class="bi bi-clock-history"></span> Trade History</h5>
+        <h5 class="mb-3" style="font-weight:700;color:#1a938a;"><span class="bi bi-clock-history"></span> Trade History</h5>
         <?php if (count($trade_history) === 0): ?>
           <div class="text-muted text-center">No trades yet.</div>
         <?php else: ?>
-          <div class="list-group">
+          <!-- Card view for mobile -->
+          <div class="trade-history-cards">
             <?php foreach ($trade_history as $trade): ?>
-              <div class="list-group-item d-flex align-items-center gap-3 mb-2" style="background:#f8fafd;">
-                <div class="flex-grow-1">
-                  <div class="fw-semibold" style="font-size:1.08rem;min-width:120px;"> <?php echo htmlspecialchars($trade['card_type']); ?> </div>
-                  <div class="text-muted" style="font-size:0.97rem;"> <?php echo htmlspecialchars($trade['date']); ?> </div>
-                </div>
-                <span class="badge" style="font-size:1em;min-width:110px;
-                  <?php if ($trade['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
-                        elseif ($trade['status'] === 'Completed' || $trade['status'] === 'Paid Out') echo 'background:#d4edda;color:#155724;';
-                        elseif ($trade['status'] === 'Declined') echo 'background:#f8d7da;color:#721c24;';
-                  ?>">
-                  <?php if ($trade['status'] === 'Processing'): ?>
-                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                  <?php endif; ?>
-                  <?php echo htmlspecialchars($trade['status']); ?>
-                </span>
-                <span class="fw-bold" style="color:#19376d;">$<?php echo number_format($trade['amount'],2); ?></span>
-              </div>
+            <div class="trade-history-card">
+              <div class="card-title"><?php echo htmlspecialchars($trade['card_type']); ?></div>
+              <div class="trade-row"><span>Date:</span> <span class="text-muted"><?php echo htmlspecialchars($trade['date']); ?></span></div>
+              <div class="trade-row"><span>Amount:</span> <span class="fw-bold">$<?php echo number_format($trade['amount'],2); ?></span></div>
+              <div class="trade-row"><span>You Get:</span> <span class="fw-bold text-success">₦<?php echo ($trade['rate'] ? number_format($trade['amount'] * $trade['rate'],2) : '0.00'); ?></span></div>
+              <div class="trade-row"><span>Status:</span> <span class="badge" style="<?php
+                if ($trade['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
+                elseif ($trade['status'] === 'Completed' || $trade['status'] === 'Paid Out') echo 'background:#d4edda;color:#155724;';
+                elseif ($trade['status'] === 'Declined') echo 'background:#f8d7da;color:#721c24;';
+              ?>"><?php if ($trade['status'] === 'Processing'): ?><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span><?php endif; ?><?php echo htmlspecialchars($trade['status']); ?></span></div>
+            </div>
             <?php endforeach; ?>
+          </div>
+          <!-- Table view for desktop -->
+          <div class="trade-history-table">
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle bg-white" style="border-radius:1.1rem;overflow:hidden;">
+                <thead class="table-light">
+                  <tr>
+                    <th>Giftcard</th>
+                    <th>Date</th>
+                    <th>Amount (USD)</th>
+                    <th>You Get (₦)</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($trade_history as $trade): ?>
+                  <tr>
+                    <td style="font-weight:600;min-width:120px;"> <?php echo htmlspecialchars($trade['card_type']); ?> </td>
+                    <td class="text-muted" style="font-size:0.97rem;"> <?php echo htmlspecialchars($trade['date']); ?> </td>
+                    <td class="fw-bold" style="color:#19376d;">$<?php echo number_format($trade['amount'],2); ?></td>
+                    <td class="fw-bold text-success">₦<?php echo ($trade['rate'] ? number_format($trade['amount'] * $trade['rate'],2) : '0.00'); ?></td>
+                    <td>
+                      <span class="badge" style="font-size:1em;min-width:110px;
+                        <?php if ($trade['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
+                              elseif ($trade['status'] === 'Completed' || $trade['status'] === 'Paid Out') echo 'background:#d4edda;color:#155724;';
+                              elseif ($trade['status'] === 'Declined') echo 'background:#f8d7da;color:#721c24;';
+                      ?>">
+                        <?php if ($trade['status'] === 'Processing'): ?>
+                          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        <?php endif; ?>
+                        <?php echo htmlspecialchars($trade['status']); ?>
+                      </span>
+                    </td>
+                  </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
           </div>
         <?php endif; ?>
       </div>
@@ -369,6 +445,22 @@ $stmt->close();
         document.getElementById('modal_card_id').value = cardId;
         document.getElementById('modal_card_name').value = cardName;
         document.getElementById('modal_card_rate').value = cardRate;
+        document.getElementById('modal_amount').value = '';
+        document.getElementById('youGetValue').textContent = 'You Get: ₦0';
+        document.getElementById('modal_amount').setAttribute('data-rate', cardRate);
+      });
+    }
+    // Calculate and display 'You Get' value
+    var modalAmount = document.getElementById('modal_amount');
+    if (modalAmount) {
+      modalAmount.addEventListener('input', function() {
+        var rate = parseFloat(modalAmount.getAttribute('data-rate'));
+        var amount = parseFloat(modalAmount.value);
+        var youGet = 0;
+        if (!isNaN(rate) && !isNaN(amount)) {
+          youGet = rate * amount;
+        }
+        document.getElementById('youGetValue').textContent = 'You Get: ₦' + youGet.toLocaleString('en-NG', {maximumFractionDigits:2});
       });
     }
   </script>

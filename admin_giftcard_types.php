@@ -82,7 +82,12 @@ $res->close();
     .admin-main-content { margin-left: 230px; padding: 2rem 2rem 1.5rem 2rem; min-height: 100vh; transition: margin-left 0.2s; flex: 1 0 auto; }
     .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 64px; }
     @media (max-width: 991px) { .admin-header { position: fixed; top: 0; left: 0; width: 100vw; z-index: 110; } .admin-sidebar { position: fixed; left: -230px; top: 0; height: 100vh; z-index: 120; } .admin-sidebar.open { left: 0; } #adminSidebarOverlay { display: none; } #adminSidebarOverlay.active { display: block; } .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 60px; } .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 0; } }
-    .dashboard-card { background: #fff; border-radius: 1.2rem; box-shadow: 0 4px 24px rgba(26,147,138,0.08); padding: 1.5rem 1.2rem; margin-bottom: 2rem; transition: box-shadow 0.2s; }
+    .dashboard-card { background: #fff; border-radius: 1.2rem; box-shadow: 0 4px 24px rgba(26,147,138,0.08); padding: 1.5rem 1.2rem; margin-bottom: 2rem; transition: box-shadow 0.2s;
+      width: 98%;
+      max-width: 1400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
     .dashboard-card:hover { box-shadow: 0 6px 32px rgba(26,147,138,0.12); }
     footer { background: #fff; border-top: 1px solid #e9ecef; color: #888; font-size: 1rem; text-align: center; padding: 1.2rem 0 0.7rem 0; margin-top: 2rem; flex-shrink: 0; width: 100%; }
     .admin-table th { background: #1a938a; color: #fff; font-weight: 600; }
@@ -97,6 +102,134 @@ $res->close();
     .admin-table .btn-outline-primary { border-color: #1a938a; color: #1a938a; }
     .admin-table .btn-outline-primary:hover { background: #1a938a; color: #fff; }
     .add-account-btn { margin-bottom: 1.5rem; }
+    .widgets-container {
+      margin-top: 120px !important;
+    }
+    @media (max-width: 991px) {
+      .widgets-container {
+        margin-top: 120px !important;
+      }
+    }
+    .admin-table {
+      border-radius: 1.1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(26,147,138,0.10);
+      background: #fff;
+      width: 75vw;
+      min-width: 700px;
+      margin-left: 10px;
+      margin-right: 0;
+    }
+    .add-giftcard-btn {
+      background: linear-gradient(90deg, #1a938a 0%, #19376d 100%);
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      border-radius: 2rem;
+      box-shadow: 0 2px 8px rgba(26,147,138,0.10);
+      padding: 0.6rem 1.5rem;
+      font-size: 1.08rem;
+      transition: background 0.18s, box-shadow 0.18s;
+      margin-bottom: 0.5rem;
+      margin-top: 0.5rem;
+      width: auto;
+      min-width: 180px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .add-giftcard-btn:hover, .add-giftcard-btn:focus {
+      background: linear-gradient(90deg, #19376d 0%, #1a938a 100%);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(26,147,138,0.18);
+    }
+    @media (max-width: 600px) {
+      .admin-main-content {
+        padding: 0.5rem 0.2rem 1.2rem 0.2rem !important;
+      }
+      .dashboard-card {
+        padding: 0.7rem 0.2rem !important;
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(26,147,138,0.08);
+        margin-bottom: 1.2rem;
+        width: 85vw;
+        max-width: 85vw;
+        margin-left: -12px;
+        margin-right: 0;
+      }
+      .add-giftcard-btn {
+        width: 100%;
+        min-width: unset;
+        font-size: 1.08rem;
+        padding: 0.9rem 0.5rem;
+        margin-bottom: 1.2rem;
+        margin-top: 0.2rem;
+        border-radius: 1.5rem;
+      }
+      .giftcard-type-card {
+        margin-bottom: 1.5rem;
+        border-radius: 1.1rem;
+        box-shadow: 0 2px 12px rgba(26,147,138,0.10);
+      }
+      .giftcard-type-card .card-body {
+        padding: 1.2rem 0.7rem 1rem 0.7rem;
+        gap: 0.7rem;
+      }
+      .giftcard-type-card .card-title {
+        font-size: 1.13rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+      }
+      .giftcard-type-card .img-wrap img {
+        width: 64px;
+        height: 64px;
+        border-radius: 0.8rem;
+      }
+      .giftcard-type-card .info-row {
+        font-size: 1.08rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.1rem;
+      }
+      .giftcard-type-card .actions {
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+      .giftcard-type-card .btn-outline-primary,
+      .giftcard-type-card .btn-danger {
+        width: 100%;
+        font-size: 1.08rem;
+        padding: 0.7rem 0.5rem;
+        border-radius: 1.2rem;
+      }
+      .modal-content {
+        padding: 0.5rem 0.2rem !important;
+        border-radius: 1.1rem;
+      }
+      .modal-header, .modal-footer {
+        padding-left: 0.7rem;
+        padding-right: 0.7rem;
+      }
+      .form-group.mb-2 {
+        margin-bottom: 1.1rem !important;
+      }
+      .form-control {
+        font-size: 1.08rem;
+        padding: 0.7rem 0.6rem;
+        border-radius: 0.7rem;
+      }
+      .modal-title {
+        font-size: 1.15rem;
+      }
+      .admin-header {
+        padding: 0.5rem 0.5rem !important;
+      }
+      .widgets-container {
+        margin-top: 55rem !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -139,9 +272,9 @@ $res->close();
   <main class="admin-main-content" id="adminMainContent">
     <div class="container-fluid px-0 widgets-container" style="margin-top: 4rem;">
       <div class="dashboard-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h4 class="mb-0"><span class="bi bi-card-image"></span> Gift Card Types</h4>
-          <button class="btn btn-primary add-account-btn" data-bs-toggle="modal" data-bs-target="#addCardModal"><span class="bi bi-plus"></span> Add Gift Card Type</button>
+        <div class="mb-3">
+          <h4 class="mb-2"><span class="bi bi-card-image"></span> Gift Card Types</h4>
+          <button class="btn btn-sm btn-primary add-account-btn mt-1 add-giftcard-btn" data-bs-toggle="modal" data-bs-target="#addCardModal"><span class="bi bi-plus"></span> Add Gift Card Type</button>
         </div>
         <div class="table-responsive">
           <!-- Table for desktop -->
@@ -186,24 +319,38 @@ $res->close();
                 box-shadow: 0 2px 16px rgba(26,147,138,0.10);
                 border: none;
                 margin-bottom: 1.2rem;
+                padding: 0;
+                overflow: hidden;
               }
               .giftcard-type-card .card-body {
-                padding: 1.2rem 1rem;
+                padding: 1.1rem 0.8rem 0.8rem 0.8rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
               }
               .giftcard-type-card .card-title {
                 color: #1a938a;
                 font-weight: 700;
                 font-size: 1.08rem;
-                margin-bottom: 0.4rem;
+                margin-bottom: 0.2rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
               }
               .giftcard-type-card .badge {
                 background: #ffbf3f;
                 color: #19376d;
                 font-weight: 600;
+                font-size: 0.98em;
+                border-radius: 0.7rem;
+                padding: 0.3em 0.8em;
               }
               .giftcard-type-card .btn-outline-primary {
                 border-color: #1a938a;
                 color: #1a938a;
+                font-size: 1.1rem;
+                padding: 0.45rem 1.1rem;
+                border-radius: 1.5rem;
               }
               .giftcard-type-card .btn-outline-primary:hover {
                 background: #1a938a;
@@ -212,25 +359,66 @@ $res->close();
               .giftcard-type-card .btn-danger {
                 background: #dc3545;
                 border: none;
+                font-size: 1.1rem;
+                padding: 0.45rem 1.1rem;
+                border-radius: 1.5rem;
               }
               .giftcard-type-card .btn-danger:hover {
                 background: #b52a37;
+              }
+              .giftcard-type-card .img-wrap {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 0.7rem;
+              }
+              .giftcard-type-card .img-wrap img {
+                width: 56px;
+                height: 56px;
+                object-fit: cover;
+                border-radius: 0.7rem;
+                box-shadow: 0 2px 8px rgba(25,55,109,0.08);
+                border: 2px solid #fff;
+                background: #f8fafd;
+              }
+              .giftcard-type-card .info-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 1.01rem;
+                margin-bottom: 0.2rem;
+              }
+              .giftcard-type-card .info-label {
+                color: #19376d;
+                font-weight: 500;
+              }
+              .giftcard-type-card .info-value {
+                color: #1a938a;
+                font-weight: 600;
+              }
+              .giftcard-type-card .actions {
+                display: flex;
+                gap: 0.7rem;
+                margin-top: 0.7rem;
               }
             </style>
             <?php foreach ($giftcards as $card): ?>
               <div class="card giftcard-type-card">
                 <div class="card-body">
-                  <div class="card-title mb-2"><strong><?= htmlspecialchars($card['card_name']) ?></strong></div>
-                  <div class="mb-2"><img src="<?= htmlspecialchars($card['image_url']) ?>" alt="<?= htmlspecialchars($card['card_name']) ?>" style="width:48px;height:48px;object-fit:cover;border-radius:0.7rem;box-shadow:0 2px 8px rgba(25,55,109,0.08);"></div>
-                  <div><b>Rate:</b> ₦<?= htmlspecialchars($card['rate']) ?></div>
-                  <div><b>Value Range:</b> <?= htmlspecialchars($card['value_range']) ?></div>
-                  <div><b>Value:</b> $<?= htmlspecialchars($card['value']) ?></div>
-                  <div><b>Status:</b> <span class="badge"><?= htmlspecialchars(ucfirst($card['status'])) ?></span></div>
-                  <div class="mt-2">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editCard(<?= $card['id'] ?>, '<?= htmlspecialchars(addslashes($card['card_name'])) ?>', '<?= htmlspecialchars(addslashes($card['rate'])) ?>', '<?= htmlspecialchars(addslashes($card['image_url'])) ?>', '<?= htmlspecialchars(addslashes($card['value_range'])) ?>', '<?= htmlspecialchars($card['value']) ?>')"><span class="bi bi-pencil"></span></button>
-                    <form method="post" style="display:inline;" onsubmit="return confirm('Delete this card type?');">
+                  <div class="card-title mb-1">
+                    <span><?= htmlspecialchars($card['card_name']) ?></span>
+                    <span class="badge">Status: <?= htmlspecialchars(ucfirst($card['status'])) ?></span>
+                  </div>
+                  <div class="img-wrap">
+                    <img src="<?= htmlspecialchars($card['image_url']) ?>" alt="<?= htmlspecialchars($card['card_name']) ?>">
+                  </div>
+                  <div class="info-row"><span class="info-label">Rate:</span> <span class="info-value">₦<?= htmlspecialchars($card['rate']) ?></span></div>
+                  <div class="info-row"><span class="info-label">Value Range:</span> <span class="info-value"><?= htmlspecialchars($card['value_range']) ?></span></div>
+                  <div class="info-row"><span class="info-label">Value:</span> <span class="info-value">$<?= htmlspecialchars($card['value']) ?></span></div>
+                  <div class="actions">
+                    <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editCard(<?= $card['id'] ?>, '<?= htmlspecialchars(addslashes($card['card_name'])) ?>', '<?= htmlspecialchars(addslashes($card['rate'])) ?>', '<?= htmlspecialchars(addslashes($card['image_url'])) ?>', '<?= htmlspecialchars(addslashes($card['value_range'])) ?>', '<?= htmlspecialchars($card['value']) ?>')"><span class="bi bi-pencil"></span> Edit</button>
+                    <form method="post" style="display:inline;flex:1;" onsubmit="return confirm('Delete this card type?');">
                       <input type="hidden" name="delete_card_id" value="<?= $card['id'] ?>">
-                      <button type="submit" class="btn btn-sm btn-danger"><span class="bi bi-trash"></span></button>
+                      <button type="submit" class="btn btn-sm btn-danger w-100"><span class="bi bi-trash"></span> Delete</button>
                     </form>
                   </div>
                 </div>

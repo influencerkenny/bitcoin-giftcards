@@ -217,6 +217,33 @@ $res->close();
     .account-card strong {
       color: #1a938a;
     }
+    .account-card .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .account-card .d-flex.justify-content-between.align-items-center.mb-2 {
+      margin-bottom: 0.5rem !important;
+    }
+    .account-card .row.g-2 {
+      margin-bottom: 0.2rem;
+    }
+    .account-card .row.g-2.mt-1 {
+      margin-top: 0.2rem !important;
+      margin-bottom: 0.2rem !important;
+    }
+    .account-card .btn {
+      align-self: flex-end;
+      margin-top: 0.5rem;
+    }
+    @media (min-width: 992px) {
+      .container {
+        max-width: 950px;
+        width: 95vw;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    }
   </style>
 </head>
 <body>
@@ -289,9 +316,13 @@ $res->close();
         </div>
         <button type="submit" class="btn-primary">Save Account</button>
       </form>
+      <?php
+      $local_accounts = array_filter($accounts, function($acc) { return $acc['account_type'] === 'local'; });
+      $international_accounts = array_filter($accounts, function($acc) { return $acc['account_type'] === 'international'; });
+      ?>
       <div class="row g-3 mt-4">
-        <?php foreach ($accounts as $acc): ?>
-        <div class="col-12">
+        <?php foreach ($local_accounts as $acc): ?>
+        <div class="col-12 col-md-6">
           <div class="card account-card">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-center mb-2">
@@ -304,10 +335,29 @@ $res->close();
                 <div class="col-12 col-md-4"><strong>Bank Name:</strong> <?= htmlspecialchars($acc['bank_name']) ?></div>
               </div>
               <div class="row g-2 mt-1">
-                <?php if ($acc['account_type'] === 'international'): ?>
-                  <div class="col-12 col-md-4"><strong>IBAN:</strong> <?= htmlspecialchars($acc['iban']) ?></div>
-                  <div class="col-12 col-md-4"><strong>Swift:</strong> <?= htmlspecialchars($acc['swift']) ?></div>
-                <?php endif; ?>
+                <div class="col-12 col-md-4"><strong>Date Updated:</strong> <?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></div>
+              </div>
+              <button class="btn btn-sm btn-outline-primary mt-3" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')">Edit</button>
+            </div>
+          </div>
+        </div>
+        <?php endforeach; ?>
+        <?php foreach ($international_accounts as $acc): ?>
+        <div class="col-12 col-md-6">
+          <div class="card account-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge">Type: <?= htmlspecialchars(ucfirst($acc['account_type'])) ?></span>
+                <span class="text-muted" style="font-size:0.95em;">Created: <?= htmlspecialchars($acc['date_created']) ?></span>
+              </div>
+              <div class="row g-2">
+                <div class="col-12 col-md-4"><strong>Account Name:</strong> <?= htmlspecialchars($acc['account_name']) ?></div>
+                <div class="col-12 col-md-4"><strong>Account Number:</strong> <?= htmlspecialchars($acc['account_number']) ?></div>
+                <div class="col-12 col-md-4"><strong>Bank Name:</strong> <?= htmlspecialchars($acc['bank_name']) ?></div>
+              </div>
+              <div class="row g-2 mt-1">
+                <div class="col-12 col-md-4"><strong>IBAN:</strong> <?= htmlspecialchars($acc['iban']) ?></div>
+                <div class="col-12 col-md-4"><strong>Swift:</strong> <?= htmlspecialchars($acc['swift']) ?></div>
                 <div class="col-12 col-md-4"><strong>Date Updated:</strong> <?= $acc['date_updated'] ? htmlspecialchars($acc['date_updated']) : '-' ?></div>
               </div>
               <button class="btn btn-sm btn-outline-primary mt-3" onclick="editAccount(<?= $acc['id'] ?>, '<?= htmlspecialchars(addslashes($acc['account_type'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['account_number'])) ?>', '<?= htmlspecialchars(addslashes($acc['bank_name'])) ?>', '<?= htmlspecialchars(addslashes($acc['iban'])) ?>', '<?= htmlspecialchars(addslashes($acc['swift'])) ?>')">Edit</button>

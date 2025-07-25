@@ -127,7 +127,7 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
       .admin-sidebar.open { left: 0; }
       #adminSidebarOverlay { display: none; }
       #adminSidebarOverlay.active { display: block; }
-      .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 60px; margin-top: 900px !important; }
+      .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 60px; margin-top: 1000px !important; }
       .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 0; }
       .admin-widget-grid {
         grid-template-columns: repeat(2, 1fr);

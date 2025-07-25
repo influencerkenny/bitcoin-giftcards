@@ -141,6 +141,7 @@ $res->close();
         margin-left: 0 !important;
         padding: 1rem 0.3rem 1.5rem 0.3rem !important;
         min-width: 0;
+        margin-top: 400px !important;
       }
       .container-fluid.widgets-container {
         margin-left: 0 !important;
@@ -168,12 +169,71 @@ $res->close();
       }
       .dashboard-card {
         padding: 0.7rem 0.2rem !important;
+        margin-top: 8rem !important; /* Push further down on mobile */
       }
       .modal-content {
         padding: 0.5rem 0.2rem !important;
       }
       .bank-account-card .card-body {
         padding: 0.8rem 0.3rem !important;
+      }
+      .bank-account-card {
+        background: linear-gradient(252deg, #f8fafd 0%, #e6f4ea 100.44%);
+        border-radius: 1.15rem;
+        box-shadow: 0 2px 16px rgba(26,147,138,0.13);
+        border: none;
+        margin-bottom: 1.5rem;
+        padding: 0.2rem 0.1rem;
+      }
+      .bank-account-card .card-body {
+        padding: 1.3rem 0.9rem 1.1rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+      .bank-account-card .card-title {
+        color: #1a938a;
+        font-weight: 800;
+        font-size: 1.13rem;
+        margin-bottom: 0.3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+      .bank-account-card .badge {
+        background: #ffbf3f;
+        color: #19376d;
+        font-weight: 700;
+        font-size: 1.01em;
+        border-radius: 0.7em;
+        padding: 0.4em 1em;
+      }
+      .bank-account-card .info-row {
+        display: flex;
+        flex-direction: column;
+        font-size: 1.08rem;
+        gap: 0.1rem;
+      }
+      .bank-account-card .info-label {
+        color: #19376d;
+        font-weight: 600;
+      }
+      .bank-account-card .info-value {
+        color: #1a938a;
+        font-weight: 700;
+      }
+      .bank-account-card .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.7rem;
+      }
+      .bank-account-card .btn-outline-primary,
+      .bank-account-card .btn-danger {
+        width: 100%;
+        font-size: 1.08rem;
+        padding: 0.7rem 0.5rem;
+        border-radius: 1.2rem;
       }
     }
     /* Highlight recently updated */
@@ -192,6 +252,20 @@ $res->close();
       margin-left: auto;
       margin-right: auto;
       margin-top: 10rem;
+    }
+    .admin-table {
+      font-size: 0.93rem;
+    }
+    @media (min-width: 992px) {
+      .admin-table {
+        width: 98vw;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 1.01rem;
+        box-shadow: 0 6px 32px rgba(26,147,138,0.10);
+        border-radius: 1.2rem;
+      }
     }
   </style>
 </head>
