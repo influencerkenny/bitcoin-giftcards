@@ -12,76 +12,128 @@ if (!isset($_SESSION['admin_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['transaction_id'])) {
     $transaction_id = $_POST['transaction_id'];
     $action = $_POST['action'] ?? '';
+    $transaction_type = $_POST['transaction_type'] ?? 'giftcard'; // giftcard or crypto
     
     try {
-        // Get transaction details first
-        $stmt = $db->prepare("SELECT gt.*, u.balance, u.id as user_id FROM giftcard_transactions gt 
-                              JOIN users u ON gt.user_id = u.id 
-                              WHERE gt.id = ?");
-        $stmt->bind_param('i', $transaction_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $transaction = $result->fetch_assoc();
-        
-        if (!$transaction) {
-            throw new Exception("Transaction not found");
-        }
-        
-        // Check if transaction is in processing status (only for approve/decline actions)
-        if (($action === 'approve' || $action === 'decline') && $transaction['status'] !== 'processing') {
-            throw new Exception("Transaction is not in processing status");
-        }
-        
-        if ($action === 'approve') {
-            // Calculate payout amount
-            $payout_amount = $transaction['amount'] * $transaction['rate'];
-            
-            // Update user balance
-            $new_balance = $transaction['balance'] + $payout_amount;
-            $stmt = $db->prepare("UPDATE users SET balance = ? WHERE id = ?");
-            $stmt->bind_param('di', $new_balance, $transaction['user_id']);
-            $stmt->execute();
-            
-            // Update transaction status
-            $stmt = $db->prepare("UPDATE giftcard_transactions SET status = 'approved' WHERE id = ?");
+        if ($transaction_type === 'giftcard') {
+            // Handle giftcard transactions
+            $stmt = $db->prepare("SELECT gt.*, u.balance, u.id as user_id FROM giftcard_transactions gt 
+                                  JOIN users u ON gt.user_id = u.id 
+                                  WHERE gt.id = ?");
             $stmt->bind_param('i', $transaction_id);
             $stmt->execute();
+            $result = $stmt->get_result();
+            $transaction = $result->fetch_assoc();
             
-            // Insert transaction record for user's transaction history (if table exists)
-            try {
-                $stmt = $db->prepare("INSERT INTO transactions (user_id, type, amount, description, status, created_at) 
-                                      VALUES (?, 'credit', ?, ?, 'completed', NOW())");
-                $stmt->bind_param('ids', $transaction['user_id'], $payout_amount, "Giftcard trade approved - {$transaction['card_type']} card");
+            if (!$transaction) {
+                throw new Exception("Transaction not found");
+            }
+            
+            // Check if transaction is in processing status (only for approve/decline actions)
+            if (($action === 'approve' || $action === 'decline') && $transaction['status'] !== 'processing') {
+                throw new Exception("Transaction is not in processing status");
+            }
+            
+            if ($action === 'approve') {
+                // Calculate payout amount
+                $payout_amount = $transaction['amount'] * $transaction['rate'];
+                
+                // Update user balance
+                $new_balance = $transaction['balance'] + $payout_amount;
+                $stmt = $db->prepare("UPDATE users SET balance = ? WHERE id = ?");
+                $stmt->bind_param('di', $new_balance, $transaction['user_id']);
                 $stmt->execute();
-            } catch (Exception $e) {
-                // If transactions table doesn't exist, just log the error but don't fail the approval
-                error_log("Could not insert transaction record: " . $e->getMessage());
+                
+                // Update transaction status
+                $stmt = $db->prepare("UPDATE giftcard_transactions SET status = 'approved' WHERE id = ?");
+                $stmt->bind_param('i', $transaction_id);
+                $stmt->execute();
+                
+                $_SESSION['success_message'] = "Giftcard trade approved successfully. User balance updated.";
+                
+            } elseif ($action === 'decline') {
+                // Update transaction status to declined
+                $stmt = $db->prepare("UPDATE giftcard_transactions SET status = 'declined' WHERE id = ?");
+                $stmt->bind_param('i', $transaction_id);
+                $stmt->execute();
+                
+                $_SESSION['success_message'] = "Giftcard trade declined successfully.";
+            } elseif ($action === 'delete') {
+                // Delete the transaction permanently
+                $stmt = $db->prepare("DELETE FROM giftcard_transactions WHERE id = ?");
+                if (!$stmt) {
+                    throw new Exception("Failed to prepare delete statement: " . $db->error);
+                }
+                $stmt->bind_param('i', $transaction_id);
+                if (!$stmt->execute()) {
+                    throw new Exception("Failed to execute delete: " . $stmt->error);
+                }
+                
+                if ($stmt->affected_rows > 0) {
+                    $_SESSION['success_message'] = "Giftcard trade deleted successfully.";
+                } else {
+                    throw new Exception("No transaction was deleted. Transaction ID may not exist.");
+                }
             }
-            
-            $_SESSION['success_message'] = "Giftcard trade approved successfully. User balance updated.";
-            
-        } elseif ($action === 'decline') {
-            // Update transaction status to declined
-            $stmt = $db->prepare("UPDATE giftcard_transactions SET status = 'declined' WHERE id = ?");
+        } elseif ($transaction_type === 'crypto') {
+            // Handle cryptocurrency transactions
+            $stmt = $db->prepare("SELECT ct.*, u.balance, u.id as user_id FROM crypto_transactions ct 
+                                  JOIN users u ON ct.user_id = u.id 
+                                  WHERE ct.id = ?");
             $stmt->bind_param('i', $transaction_id);
             $stmt->execute();
+            $result = $stmt->get_result();
+            $transaction = $result->fetch_assoc();
             
-            $_SESSION['success_message'] = "Giftcard trade declined successfully.";
-        } elseif ($action === 'delete') {
-            // Delete the transaction permanently
-            $stmt = $db->prepare("DELETE FROM giftcard_transactions WHERE id = ?");
-            if (!$stmt) {
-                throw new Exception("Failed to prepare delete statement: " . $db->error);
-            }
-            $stmt->bind_param('i', $transaction_id);
-            if (!$stmt->execute()) {
-                throw new Exception("Failed to execute delete: " . $stmt->error);
+            if (!$transaction) {
+                throw new Exception("Transaction not found");
             }
             
-            if ($stmt->affected_rows > 0) {
-                $_SESSION['success_message'] = "Giftcard trade deleted successfully.";
-            } else {
-                throw new Exception("No transaction was deleted. Transaction ID may not exist.");
+            // Check if transaction is in processing status
+            if (($action === 'approve' || $action === 'decline') && $transaction['status'] !== 'Processing') {
+                throw new Exception("Transaction is not in processing status");
+            }
+            
+            if ($action === 'approve') {
+                // For crypto transactions, the estimated_payment is already calculated
+                $payout_amount = $transaction['estimated_payment'];
+                
+                // Update user balance
+                $new_balance = $transaction['balance'] + $payout_amount;
+                $stmt = $db->prepare("UPDATE users SET balance = ? WHERE id = ?");
+                $stmt->bind_param('di', $new_balance, $transaction['user_id']);
+                $stmt->execute();
+                
+                // Update transaction status
+                $stmt = $db->prepare("UPDATE crypto_transactions SET status = 'Completed' WHERE id = ?");
+                $stmt->bind_param('i', $transaction_id);
+                $stmt->execute();
+                
+                $_SESSION['success_message'] = "Cryptocurrency trade approved successfully. User balance updated.";
+                
+            } elseif ($action === 'decline') {
+                // Update transaction status to rejected
+                $stmt = $db->prepare("UPDATE crypto_transactions SET status = 'Rejected' WHERE id = ?");
+                $stmt->bind_param('i', $transaction_id);
+                $stmt->execute();
+                
+                $_SESSION['success_message'] = "Cryptocurrency trade declined successfully.";
+            } elseif ($action === 'delete') {
+                // Delete the transaction permanently
+                $stmt = $db->prepare("DELETE FROM crypto_transactions WHERE id = ?");
+                if (!$stmt) {
+                    throw new Exception("Failed to prepare delete statement: " . $db->error);
+                }
+                $stmt->bind_param('i', $transaction_id);
+                if (!$stmt->execute()) {
+                    throw new Exception("Failed to execute delete: " . $stmt->error);
+                }
+                
+                if ($stmt->affected_rows > 0) {
+                    $_SESSION['success_message'] = "Cryptocurrency trade deleted successfully.";
+                } else {
+                    throw new Exception("No transaction was deleted. Transaction ID may not exist.");
+                }
             }
         }
         
@@ -143,6 +195,37 @@ if ($bitcoin_result) {
         $bitcoin_transactions[] = $row;
     }
     $bitcoin_result->close();
+}
+
+// Fetch all cryptocurrency transactions with user details
+$crypto_transactions = [];
+$crypto_query = "
+    SELECT 
+        ct.id,
+        ct.user_id,
+        u.name as user_name,
+        u.email as user_email,
+        ct.crypto_name,
+        ct.crypto_symbol,
+        ct.transaction_type,
+        ct.amount,
+        ct.rate,
+        ct.estimated_payment,
+        ct.btc_wallet,
+        ct.payment_proof,
+        ct.status,
+        ct.created_at,
+        ct.admin_notes
+    FROM crypto_transactions ct
+    LEFT JOIN users u ON ct.user_id = u.id
+    ORDER BY ct.created_at DESC
+";
+$crypto_result = $db->query($crypto_query);
+if ($crypto_result) {
+    while ($row = $crypto_result->fetch_assoc()) {
+        $crypto_transactions[] = $row;
+    }
+    $crypto_result->close();
 }
 
 // Handle status updates
@@ -519,6 +602,29 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
         padding: 0.2rem 0.4rem;
         border-radius: 0.3rem;
         border: 1px solid #e9ecef;
+      }
+      
+      /* Cryptocurrency specific styles */
+      .crypto-info {
+        display: flex;
+        flex-direction: column;
+      }
+      .crypto-name {
+        font-weight: 600;
+        color: #19376d;
+      }
+      .crypto-symbol {
+        font-size: 0.8rem;
+        color: #666;
+      }
+      .rate-display {
+        font-weight: 600;
+        color: #1a938a;
+      }
+      .payment-display {
+        font-weight: 600;
+        color: #28a745;
+      }
         font-family: 'Courier New', monospace;
       }
       
@@ -1388,6 +1494,223 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
           <?php endif; ?>
         </div>
       </div>
+
+      <!-- Cryptocurrency Trades Section -->
+      <div class="dashboard-card">
+        <div class="trades-section">
+          <div class="trades-section-header">
+            <span class="bi bi-currency-bitcoin"></span>
+            <h3>Cryptocurrency Trades</h3>
+            <span class="badge bg-light text-dark ms-auto"><?php echo count($crypto_transactions); ?> trades</span>
+          </div>
+          <!-- Desktop Table View -->
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Cryptocurrency</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Rate (₦)</th>
+                  <th>Est. Payment (₦)</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (empty($crypto_transactions)): ?>
+                  <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">
+                      <span class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></span>
+                      No cryptocurrency trades found
+                    </td>
+                  </tr>
+                <?php else: ?>
+                  <?php foreach ($crypto_transactions as $trade): ?>
+                    <tr>
+                      <td>
+                        <div class="user-info">
+                          <div class="user-name"><?php echo htmlspecialchars($trade['user_name']); ?></div>
+                          <div class="user-email"><?php echo htmlspecialchars($trade['user_email']); ?></div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="crypto-info">
+                          <div class="crypto-name"><?php echo htmlspecialchars($trade['crypto_name']); ?></div>
+                          <div class="crypto-symbol"><?php echo htmlspecialchars($trade['crypto_symbol']); ?></div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge bg-<?php echo $trade['transaction_type'] === 'buy' ? 'success' : 'warning'; ?>">
+                          <?php echo ucfirst($trade['transaction_type']); ?>
+                        </span>
+                      </td>
+                      <td>
+                        <div class="amount-display"><?php echo number_format($trade['amount'], 8); ?> <?php echo $trade['crypto_symbol']; ?></div>
+                      </td>
+                      <td>
+                        <div class="rate-display">₦<?php echo number_format($trade['rate'], 2); ?></div>
+                      </td>
+                      <td>
+                        <div class="payment-display">₦<?php echo number_format($trade['estimated_payment'], 2); ?></div>
+                      </td>
+                      <td>
+                        <span class="status-badge status-<?php echo strtolower($trade['status']); ?>">
+                          <?php echo htmlspecialchars($trade['status']); ?>
+                        </span>
+                      </td>
+                      <td>
+                        <div class="date-display">
+                          <?php echo date('M j, Y', strtotime($trade['created_at'])); ?><br>
+                          <small><?php echo date('g:i A', strtotime($trade['created_at'])); ?></small>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="d-flex gap-1">
+                          <?php if ($trade['status'] === 'Processing'): ?>
+                            <form method="POST" style="display: inline;">
+                              <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
+                              <input type="hidden" name="transaction_type" value="crypto">
+                              <input type="hidden" name="action" value="approve">
+                              <button type="submit" class="action-btn action-btn-success" 
+                                      title="Approve trade and add ₦<?php echo number_format($trade['estimated_payment'], 2); ?> to user balance">
+                                <span class="bi bi-check"></span>
+                              </button>
+                            </form>
+                            <form method="POST" style="display: inline;">
+                              <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
+                              <input type="hidden" name="transaction_type" value="crypto">
+                              <input type="hidden" name="action" value="decline">
+                              <button type="submit" class="action-btn action-btn-danger" title="Reject Trade">
+                                <span class="bi bi-x"></span>
+                              </button>
+                            </form>
+                          <?php else: ?>
+                            <span class="text-muted">-</span>
+                          <?php endif; ?>
+                          <button type="button" class="action-btn action-btn-info" 
+                                  onclick="showCryptoTradeModal(<?php echo htmlspecialchars(json_encode($trade)); ?>)" 
+                                  title="View Details">
+                            <span class="bi bi-eye"></span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Mobile Card View -->
+          <div class="mobile-cards">
+            <?php if (empty($crypto_transactions)): ?>
+              <div class="text-center py-4 text-muted">
+                <span class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></span>
+                No cryptocurrency trades found
+              </div>
+            <?php else: ?>
+              <?php foreach ($crypto_transactions as $trade): ?>
+                <div class="trade-card">
+                  <div class="trade-card-header">
+                    <div class="trade-card-user">
+                      <div class="trade-card-user-name"><?php echo htmlspecialchars($trade['user_name']); ?></div>
+                      <div class="trade-card-user-email"><?php echo htmlspecialchars($trade['user_email']); ?></div>
+                    </div>
+                    <div class="trade-card-status">
+                      <span class="status-badge status-<?php echo strtolower($trade['status']); ?>">
+                        <?php echo htmlspecialchars($trade['status']); ?>
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="trade-card-body">
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Cryptocurrency</div>
+                      <div class="trade-card-value">
+                        <?php echo htmlspecialchars($trade['crypto_name']); ?> (<?php echo htmlspecialchars($trade['crypto_symbol']); ?>)
+                      </div>
+                    </div>
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Type</div>
+                      <div class="trade-card-value">
+                        <span class="badge bg-<?php echo $trade['transaction_type'] === 'buy' ? 'success' : 'warning'; ?>">
+                          <?php echo ucfirst($trade['transaction_type']); ?>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Amount</div>
+                      <div class="trade-card-value trade-card-amount"><?php echo number_format($trade['amount'], 8); ?> <?php echo $trade['crypto_symbol']; ?></div>
+                    </div>
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Rate (₦)</div>
+                      <div class="trade-card-value">₦<?php echo number_format($trade['rate'], 2); ?></div>
+                    </div>
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Estimated Payment</div>
+                      <div class="trade-card-value trade-card-payout">₦<?php echo number_format($trade['estimated_payment'], 2); ?></div>
+                    </div>
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Wallet Address</div>
+                      <div class="trade-card-value">
+                        <code class="text-muted" style="font-size: 0.75rem; word-break: break-all;">
+                          <?php echo htmlspecialchars($trade['btc_wallet'] ?? 'N/A'); ?>
+                        </code>
+                      </div>
+                    </div>
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Payment Proof</div>
+                      <div class="trade-card-value">
+                        <?php if ($trade['payment_proof']): ?>
+                          <button type="button" class="btn btn-sm btn-outline-primary" 
+                                  onclick="openImageModal('<?php echo htmlspecialchars($trade['payment_proof']); ?>')">
+                            View Proof
+                          </button>
+                        <?php else: ?>
+                          <span class="text-muted">No proof uploaded</span>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                    <div class="trade-card-item">
+                      <div class="trade-card-label">Date</div>
+                      <div class="trade-card-value">
+                        <?php echo date('M j, Y', strtotime($trade['created_at'])); ?><br>
+                        <small><?php echo date('g:i A', strtotime($trade['created_at'])); ?></small>
+                      </div>
+                    </div>
+                    <div class="trade-card-actions">
+                      <?php if ($trade['status'] === 'Processing'): ?>
+                        <form method="POST" style="display: inline;">
+                          <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
+                          <input type="hidden" name="transaction_type" value="crypto">
+                          <input type="hidden" name="action" value="approve">
+                          <button type="submit" class="action-btn action-btn-success" 
+                                  title="Approve trade and add ₦<?php echo number_format($trade['estimated_payment'], 2); ?> to user balance">
+                            <span class="bi bi-check"></span> Approve
+                          </button>
+                        </form>
+                        <form method="POST" style="display: inline;">
+                          <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
+                          <input type="hidden" name="transaction_type" value="crypto">
+                          <input type="hidden" name="action" value="decline">
+                          <button type="submit" class="action-btn action-btn-danger" title="Reject Trade">
+                            <span class="bi bi-x"></span> Reject
+                          </button>
+                        </form>
+                      <?php else: ?>
+                        <span class="text-muted">No actions available</span>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -1401,6 +1724,98 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
         </div>
         <div class="modal-body text-center">
           <img id="modalImage" src="" alt="Card Image" style="max-width:100%;height:auto;border-radius:0.5rem;">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cryptocurrency Trade Modal -->
+  <div class="modal fade" id="cryptoTradeModal" tabindex="-1" aria-labelledby="cryptoTradeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cryptoTradeModalLabel">Cryptocurrency Trade Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="fw-bold text-secondary mb-1">User Information</div>
+                <div id="modal_crypto_user"></div>
+                <div id="modal_crypto_user_email"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="fw-bold text-secondary mb-1">Trade Information</div>
+                <div class="row">
+                  <div class="col-6">
+                    <div class="fw-bold text-secondary mb-1">Cryptocurrency</div>
+                    <div id="modal_crypto_name"></div>
+                  </div>
+                  <div class="col-6">
+                    <div class="fw-bold text-secondary mb-1">Type</div>
+                    <div id="modal_crypto_type"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="fw-bold text-secondary mb-1">Amount</div>
+                <div id="modal_crypto_amount"></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="fw-bold text-secondary mb-1">Rate (₦)</div>
+                <div>₦<span id="modal_crypto_rate"></span></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="fw-bold text-secondary mb-1">Estimated Payment</div>
+                <div class="text-success fw-bold">₦<span id="modal_crypto_payment"></span></div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="fw-bold text-secondary mb-1">Date</div>
+                <div id="modal_crypto_date" style="display:flex;align-items:center;gap:0.4em;font-size:1.01em;">
+                  <span class="bi bi-calendar-event"></span> <span id="modal_crypto_date_value"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <div class="fw-bold text-secondary mb-1">Wallet Address</div>
+            <div>
+              <code class="text-muted" style="font-size: 0.9rem; word-break: break-all;">
+                <span id="modal_crypto_wallet"></span>
+              </code>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <div class="fw-bold text-secondary mb-1">Payment Proof</div>
+            <div id="modal_crypto_proof"></div>
+          </div>
+          
+          <div class="mb-3">
+            <div class="fw-bold text-secondary mb-1">Status</div>
+            <span id="modal_crypto_status_badge"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -1637,6 +2052,43 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
         alert('Error: Form not found. Please try again.');
         giftcardModalSubmitting = false;
       }
+    }
+
+    // Cryptocurrency trade modal function
+    function showCryptoTradeModal(trade) {
+      document.getElementById('modal_crypto_user').textContent = trade.user_name;
+      document.getElementById('modal_crypto_user_email').innerHTML = `<a href="mailto:${trade.user_email}">${trade.user_email}</a>`;
+      document.getElementById('modal_crypto_name').textContent = `${trade.crypto_name} (${trade.crypto_symbol})`;
+      document.getElementById('modal_crypto_type').innerHTML = `<span class="badge bg-${trade.transaction_type === 'buy' ? 'success' : 'warning'}">${trade.transaction_type.charAt(0).toUpperCase() + trade.transaction_type.slice(1)}</span>`;
+      document.getElementById('modal_crypto_amount').textContent = `${Number(trade.amount).toLocaleString('en-US', {minimumFractionDigits:8})} ${trade.crypto_symbol}`;
+      document.getElementById('modal_crypto_rate').textContent = Number(trade.rate).toLocaleString('en-NG', {maximumFractionDigits:2});
+      document.getElementById('modal_crypto_payment').textContent = Number(trade.estimated_payment).toLocaleString('en-NG', {maximumFractionDigits:2});
+      document.getElementById('modal_crypto_date_value').textContent = trade.created_at ? new Date(trade.created_at).toLocaleString('en-US', {dateStyle:'medium', timeStyle:'short'}) : 'N/A';
+      document.getElementById('modal_crypto_wallet').textContent = trade.btc_wallet || 'N/A';
+      
+      // Payment proof
+      if (trade.payment_proof) {
+        document.getElementById('modal_crypto_proof').innerHTML = `
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="openImageModal('${trade.payment_proof}')">
+            <i class="bi bi-eye"></i> View Payment Proof
+          </button>
+        `;
+      } else {
+        document.getElementById('modal_crypto_proof').innerHTML = '<span class="text-muted">No payment proof uploaded</span>';
+      }
+      
+      // Status badge
+      var status = trade.status;
+      var badge = '<span class="badge px-3 py-2 fw-bold" style="font-size:1em;';
+      if (status === 'Processing') badge += 'background:#fff3cd;color:#856404;';
+      else if (status === 'Completed') badge += 'background:#d4edda;color:#155724;';
+      else if (status === 'Rejected') badge += 'background:#f8d7da;color:#721c24;';
+      else badge += 'background:#e9ecef;color:#888;';
+      badge += '">' + status + '</span>';
+      document.getElementById('modal_crypto_status_badge').innerHTML = badge;
+      
+      var modal = new bootstrap.Modal(document.getElementById('cryptoTradeModal'));
+      modal.show();
     }
   </script>
 </body>

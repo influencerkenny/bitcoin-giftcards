@@ -13,19 +13,37 @@ $admin_name = $_SESSION['admin_name'] ?? 'Admin';
 // Fetch live statistics
 $total_users = $db->query('SELECT COUNT(*) FROM users')->fetch_row()[0];
 $total_giftcards = $db->query('SELECT COUNT(*) FROM giftcard_rates')->fetch_row()[0];
+$total_cryptocurrencies = $db->query('SELECT COUNT(*) FROM cryptocurrency_rates WHERE status="active"')->fetch_row()[0];
 $total_bank_accounts = $db->query('SELECT COUNT(*) FROM bank_accounts')->fetch_row()[0];
 $total_btc_trades = $db->query('SELECT COUNT(*) FROM btc_transactions')->fetch_row()[0];
 $total_giftcard_trades = $db->query('SELECT COUNT(*) FROM giftcard_transactions')->fetch_row()[0];
-$total_trades = $total_btc_trades + $total_giftcard_trades;
+$total_crypto_trades = $db->query('SELECT COUNT(*) FROM crypto_transactions')->fetch_row()[0];
+$total_trades = $total_btc_trades + $total_giftcard_trades + $total_crypto_trades;
 
 // Recent users
 $recent_users = [];
 $res = $db->query('SELECT name, email, created_at FROM users ORDER BY created_at DESC LIMIT 5');
 while ($row = $res->fetch_assoc()) { $recent_users[] = $row; }
 $res->close();
-// Recent trades (btc + giftcard)
-$recent_btc = $db->query('SELECT user_id, amount, status, date FROM btc_transactions ORDER BY date DESC LIMIT 5');
-$recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date FROM giftcard_transactions ORDER BY date DESC LIMIT 5');
+// Recent trades (btc + giftcard + crypto) with user details
+$recent_btc = $db->query('
+  SELECT b.user_id, b.amount, b.status, b.date, b.txid, u.name as user_name, u.email as user_email 
+  FROM btc_transactions b 
+  LEFT JOIN users u ON b.user_id = u.id 
+  ORDER BY b.date DESC LIMIT 3
+');
+$recent_giftcard = $db->query('
+  SELECT g.user_id, g.card_type, g.amount, g.status, g.date, g.card_image, u.name as user_name, u.email as user_email 
+  FROM giftcard_transactions g 
+  LEFT JOIN users u ON g.user_id = u.id 
+  ORDER BY g.date DESC LIMIT 3
+');
+$recent_crypto = $db->query('
+  SELECT c.user_id, c.crypto_name, c.crypto_symbol, c.transaction_type, c.amount, c.status, c.created_at, u.name as user_name, u.email as user_email 
+  FROM crypto_transactions c 
+  LEFT JOIN users u ON c.user_id = u.id 
+  ORDER BY c.created_at DESC LIMIT 4
+');
 
 ?>
 <!DOCTYPE html>
@@ -232,6 +250,7 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
     .gradient-green { background: linear-gradient(90deg, #ffbf3f 60%, #1a938a 100%); color: #fff; }
     .gradient-purple { background: linear-gradient(90deg, #6f42c1 60%, #1a938a 100%); color: #fff; }
     .gradient-orange { background: linear-gradient(90deg, #fd7e14 60%, #ffbf3f 100%); color: #fff; }
+    .gradient-info { background: linear-gradient(90deg, #17a2b8 60%, #1a938a 100%); color: #fff; }
     .widget-label { font-size: 1.05rem; font-weight: 500; opacity: 0.85; }
     .widget-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.2rem; }
     .dashboard-card {
@@ -360,11 +379,12 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
     <button class="admin-sidebar-toggler d-none d-lg-block" id="adminSidebarToggler" title="Toggle Sidebar"><span class="bi bi-list"></span></button>
     <ul class="nav flex-column">
       <li><a class="nav-link active" href="#"><span class="bi bi-speedometer2"></span> <span class="sidebar-label">Dashboard Overview</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-card-image"></span> <span class="sidebar-label">Gift Cards</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-people"></span> <span class="sidebar-label">Users</span></a></li>
+      <li><a class="nav-link" href="admin_giftcard_types.php"><span class="bi bi-gift"></span> <span class="sidebar-label">Giftcard Types</span></a></li>
+      <li><a class="nav-link" href="admin_cryptocurrencies.php"><span class="bi bi-currency-bitcoin"></span> <span class="sidebar-label">Cryptocurrencies</span></a></li>
       <li><a class="nav-link" href="admin_trades.php"><span class="bi bi-arrow-left-right"></span> <span class="sidebar-label">Trades</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-bank"></span> <span class="sidebar-label">Bank Accounts</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-box-arrow-right"></span> <span class="sidebar-label">Logout</span></a></li>
+      <li><a class="nav-link" href="admin_bank_accounts.php"><span class="bi bi-bank"></span> <span class="sidebar-label">Bank Accounts</span></a></li>
+      <li><a class="nav-link" href="admin_stats.php"><span class="bi bi-graph-up"></span> <span class="sidebar-label">Statistics</span></a></li>
+      <li><a class="nav-link" href="admin_logout.php"><span class="bi bi-box-arrow-right"></span> <span class="sidebar-label">Logout</span></a></li>
     </ul>
   </nav>
   <div id="adminSidebarOverlay" style="display:none;position:fixed;inset:0;z-index:99;background:rgba(10,23,78,0.35);transition:opacity 0.2s;"></div>
@@ -455,6 +475,22 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
           </a>
         </div>
         <div class="col-12 col-md-6 col-xl-3">
+          <a href="admin_cryptocurrencies.php" style="text-decoration:none;">
+            <div class="card shadow-sm border-0 h-100 widget-card gradient-info position-relative">
+              <div class="loading-overlay" id="cryptoLoading">
+                <div class="spinner-border text-info" role="status"></div>
+              </div>
+              <div class="card-body d-flex align-items-center gap-3">
+                <span class="bi bi-currency-bitcoin widget-icon"></span>
+                <div>
+                  <div class="widget-label">Cryptocurrencies</div>
+                  <div class="widget-value number-animation" id="cryptoCount"><?php echo $total_cryptocurrencies; ?></div>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
           <a href="admin_bank_accounts.php" style="text-decoration:none;">
             <div class="card shadow-sm border-0 h-100 widget-card gradient-orange position-relative">
               <div class="loading-overlay" id="bankLoading">
@@ -502,15 +538,90 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
               <div id="recentTradesList">
                 <ul class="list-group list-group-flush">
                   <?php while ($row = $recent_btc->fetch_assoc()): ?>
-                    <li class="list-group-item d-flex align-items-center justify-content-between">
-                      <span><span class="badge bg-info">BTC</span> User #<?php echo $row['user_id']; ?>: $<?php echo $row['amount']; ?> (<?php echo htmlspecialchars($row['status']); ?>)</span>
-                      <span class="text-muted"><?php echo date('M d', strtotime($row['date'])); ?></span>
+                    <li class="list-group-item d-flex align-items-center justify-content-between py-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-info px-2 py-1" style="font-size:0.8rem;">BTC</span>
+                        <div>
+                          <div class="fw-bold" style="font-size:0.95rem;color:#19376d;">
+                            <?php echo htmlspecialchars($row['user_name'] ?? 'Unknown User'); ?>
+                          </div>
+                          <div class="text-muted" style="font-size:0.85rem;">
+                            <?php echo htmlspecialchars($row['user_email'] ?? 'No email'); ?>
+                          </div>
+                          <div style="font-size:0.9rem;">
+                            <span class="fw-bold"><?php echo number_format($row['amount'], 8); ?> BTC</span>
+                            <?php if (!empty($row['txid'])): ?>
+                              <span class="text-muted ms-2">ID: <?php echo htmlspecialchars(substr($row['txid'], 0, 8)) . '...'; ?></span>
+                            <?php endif; ?>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="text-end">
+                        <span class="badge" style="font-size:0.8rem;<?php 
+                          if ($row['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
+                          elseif ($row['status'] === 'Completed' || $row['status'] === 'Paid Out') echo 'background:#d4edda;color:#155724;';
+                          elseif ($row['status'] === 'Declined') echo 'background:#f8d7da;color:#721c24;';
+                        ?>"><?php echo htmlspecialchars($row['status']); ?></span>
+                        <div class="text-muted mt-1" style="font-size:0.8rem;"><?php echo date('M j, g:i A', strtotime($row['date'])); ?></div>
+                      </div>
                     </li>
                   <?php endwhile; ?>
                   <?php while ($row = $recent_giftcard->fetch_assoc()): ?>
-                    <li class="list-group-item d-flex align-items-center justify-content-between">
-                      <span><span class="badge bg-warning text-dark">Giftcard</span> User #<?php echo $row['user_id']; ?>: <?php echo htmlspecialchars($row['card_type']); ?> ₦<?php echo $row['amount']; ?> (<?php echo htmlspecialchars($row['status']); ?>)</span>
-                      <span class="text-muted"><?php echo date('M d', strtotime($row['date'])); ?></span>
+                    <li class="list-group-item d-flex align-items-center justify-content-between py-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-warning text-dark px-2 py-1" style="font-size:0.8rem;">Giftcard</span>
+                        <div>
+                          <div class="fw-bold" style="font-size:0.95rem;color:#19376d;">
+                            <?php echo htmlspecialchars($row['user_name'] ?? 'Unknown User'); ?>
+                          </div>
+                          <div class="text-muted" style="font-size:0.85rem;">
+                            <?php echo htmlspecialchars($row['user_email'] ?? 'No email'); ?>
+                          </div>
+                          <div style="font-size:0.9rem;">
+                            <span class="fw-bold">$<?php echo number_format($row['amount'], 2); ?></span>
+                            <span class="text-muted ms-2"><?php echo htmlspecialchars($row['card_type']); ?></span>
+                            <?php if (!empty($row['card_image'])): ?>
+                              <span class="text-success ms-2"><i class="bi bi-image"></i></span>
+                            <?php endif; ?>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="text-end">
+                        <span class="badge" style="font-size:0.8rem;<?php 
+                          if ($row['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
+                          elseif ($row['status'] === 'Completed' || $row['status'] === 'Paid Out') echo 'background:#d4edda;color:#155724;';
+                          elseif ($row['status'] === 'Declined') echo 'background:#f8d7da;color:#721c24;';
+                        ?>"><?php echo htmlspecialchars($row['status']); ?></span>
+                        <div class="text-muted mt-1" style="font-size:0.8rem;"><?php echo date('M j, g:i A', strtotime($row['date'])); ?></div>
+                      </div>
+                    </li>
+                  <?php endwhile; ?>
+                  <?php while ($row = $recent_crypto->fetch_assoc()): ?>
+                    <li class="list-group-item d-flex align-items-center justify-content-between py-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-primary px-2 py-1" style="font-size:0.8rem;"><?php echo htmlspecialchars($row['crypto_symbol']); ?></span>
+                        <div>
+                          <div class="fw-bold" style="font-size:0.95rem;color:#19376d;">
+                            <?php echo htmlspecialchars($row['user_name'] ?? 'Unknown User'); ?>
+                          </div>
+                          <div class="text-muted" style="font-size:0.85rem;">
+                            <?php echo htmlspecialchars($row['user_email'] ?? 'No email'); ?>
+                          </div>
+                          <div style="font-size:0.9rem;">
+                            <span class="fw-bold"><?php echo number_format($row['amount'], 8); ?> <?php echo htmlspecialchars($row['crypto_symbol']); ?></span>
+                            <span class="text-muted ms-2"><?php echo ucfirst($row['transaction_type']); ?></span>
+                            <span class="text-info ms-2"><?php echo htmlspecialchars($row['crypto_name']); ?></span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="text-end">
+                        <span class="badge" style="font-size:0.8rem;<?php 
+                          if ($row['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
+                          elseif ($row['status'] === 'Completed') echo 'background:#d4edda;color:#155724;';
+                          elseif ($row['status'] === 'Rejected') echo 'background:#f8d7da;color:#721c24;';
+                        ?>"><?php echo htmlspecialchars($row['status']); ?></span>
+                        <div class="text-muted mt-1" style="font-size:0.8rem;"><?php echo date('M j, g:i A', strtotime($row['created_at'])); ?></div>
+                      </div>
                     </li>
                   <?php endwhile; ?>
                 </ul>
