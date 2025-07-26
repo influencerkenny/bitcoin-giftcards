@@ -716,26 +716,26 @@ $transactions_stmt->close();
 
                         <!-- Amount -->
                         <div class="mb-3">
-                            <label for="amount" class="form-label">Amount (<span id="cryptoSymbol">CRYPTO</span>)</label>
-                            <input type="number" step="0.00000001" class="form-control" id="amount" name="amount" required oninput="calculatePayment()">
+                            <label for="amount" class="form-label">Amount (<span id="amountLabel">₦</span>)</label>
+                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required oninput="calculatePayment()">
                         </div>
 
-                        <!-- Estimated Payment -->
+                        <!-- You Get -->
                         <div class="mb-3">
-                            <label class="form-label">Estimated Payment (₦)</label>
-                            <div class="form-control bg-light" id="estimatedPayment">₦0.00</div>
+                            <label class="form-label">You Get (<span id="cryptoSymbol">CRYPTO</span>)</label>
+                            <div class="form-control bg-light" id="estimatedPayment">0.00000000</div>
                         </div>
 
-                        <!-- BTC Wallet -->
+                        <!-- Destination Wallet Address -->
                         <div class="mb-3">
-                            <label for="btc_wallet" class="form-label">Wallet Address</label>
+                            <label for="btc_wallet" class="form-label">Destination Wallet Address</label>
                             <input type="text" class="form-control" id="btc_wallet" name="btc_wallet" required>
                             <div class="form-text">Enter your cryptocurrency wallet address</div>
                         </div>
 
-                        <!-- Payment Proof -->
+                        <!-- Proof of Pay -->
                         <div class="mb-3">
-                            <label for="payment_proof" class="form-label">Payment Proof</label>
+                            <label for="payment_proof" class="form-label">Proof of Pay</label>
                             <input type="file" class="form-control" id="payment_proof" name="payment_proof" accept="image/*,.pdf" required>
                             <div class="form-text">Upload screenshot or PDF of your payment transaction</div>
                         </div>
@@ -786,10 +786,21 @@ $transactions_stmt->close();
             document.getElementById('transactionType').value = type;
             document.getElementById('tradeTypeText').textContent = type === 'buy' ? 'Buy Cryptocurrency' : 'Sell Cryptocurrency';
             
+            // Update amount field based on transaction type
+            const amountInput = document.getElementById('amount');
+            const amountLabel = document.getElementById('amountLabel');
+            if (type === 'buy') {
+                amountLabel.textContent = '₦';
+                amountInput.step = '0.01';
+            } else {
+                amountLabel.textContent = 'CRYPTO';
+                amountInput.step = '0.00000001';
+            }
+            
             // Reset form
             document.getElementById('tradeForm').reset();
             document.getElementById('rateDisplay').style.display = 'none';
-            document.getElementById('estimatedPayment').textContent = '₦0.00';
+            document.getElementById('estimatedPayment').textContent = type === 'buy' ? '0.00000000' : '₦0.00';
             
             new bootstrap.Modal(document.getElementById('tradeModal')).show();
         }
@@ -810,16 +821,23 @@ $transactions_stmt->close();
                 calculatePayment();
             } else {
                 document.getElementById('rateDisplay').style.display = 'none';
-                document.getElementById('estimatedPayment').textContent = '₦0.00';
+                document.getElementById('estimatedPayment').textContent = currentTransactionType === 'buy' ? '0.00000000' : '₦0.00';
             }
         }
 
         function calculatePayment() {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
             const rate = currentTransactionType === 'buy' ? currentBuyRate : currentSellRate;
-            const estimatedPayment = amount * rate;
             
-            document.getElementById('estimatedPayment').textContent = '₦' + estimatedPayment.toLocaleString();
+            if (currentTransactionType === 'buy') {
+                // For buying: amount in ₦, result in crypto
+                const cryptoAmount = amount / rate;
+                document.getElementById('estimatedPayment').textContent = cryptoAmount.toFixed(8);
+            } else {
+                // For selling: amount in crypto, result in ₦
+                const estimatedPayment = amount * rate;
+                document.getElementById('estimatedPayment').textContent = '₦' + estimatedPayment.toLocaleString();
+            }
         }
     </script>
 </body>
