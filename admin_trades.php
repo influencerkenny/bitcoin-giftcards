@@ -2,8 +2,79 @@
 session_start();
 require_once 'db.php';
 
-// Check if admin is logged in (you may want to add proper admin authentication)
-// For now, we'll assume admin access
+// Check if admin is logged in
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: admin_login.php');
+    exit();
+}
+
+// Handle giftcard trade approve/decline actions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['transaction_id'])) {
+    $transaction_id = $_POST['transaction_id'];
+    $action = $_POST['action'] ?? '';
+    
+    try {
+        // Get transaction details first
+        $stmt = $pdo->prepare("SELECT gt.*, u.balance, u.id as user_id FROM giftcard_trades gt 
+                              JOIN users u ON gt.user_id = u.id 
+                              WHERE gt.id = ?");
+        $stmt->execute([$transaction_id]);
+        $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$transaction) {
+            throw new Exception("Transaction not found");
+        }
+        
+        // Check if transaction is in processing status
+        if ($transaction['status'] !== 'processing') {
+            throw new Exception("Transaction is not in processing status");
+        }
+        
+        if ($action === 'approve') {
+            // Calculate payout amount
+            $payout_amount = $transaction['amount'] * $transaction['rate'];
+            
+            // Update user balance
+            $new_balance = $transaction['balance'] + $payout_amount;
+            $stmt = $pdo->prepare("UPDATE users SET balance = ? WHERE id = ?");
+            $stmt->execute([$new_balance, $transaction['user_id']]);
+            
+            // Update transaction status
+            $stmt = $pdo->prepare("UPDATE giftcard_trades SET status = 'approved' WHERE id = ?");
+            $stmt->execute([$transaction_id]);
+            
+            // Insert transaction record for user's transaction history (if table exists)
+            try {
+                $stmt = $pdo->prepare("INSERT INTO transactions (user_id, type, amount, description, status, created_at) 
+                                      VALUES (?, 'credit', ?, ?, 'completed', NOW())");
+                $stmt->execute([
+                    $transaction['user_id'], 
+                    $payout_amount, 
+                    "Giftcard trade approved - {$transaction['card_type']} card"
+                ]);
+            } catch (Exception $e) {
+                // If transactions table doesn't exist, just log the error but don't fail the approval
+                error_log("Could not insert transaction record: " . $e->getMessage());
+            }
+            
+            $_SESSION['success_message'] = "Giftcard trade approved successfully. User balance updated.";
+            
+        } elseif ($action === 'decline') {
+            // Update transaction status to declined
+            $stmt = $pdo->prepare("UPDATE giftcard_trades SET status = 'declined' WHERE id = ?");
+            $stmt->execute([$transaction_id]);
+            
+            $_SESSION['success_message'] = "Giftcard trade declined successfully.";
+        }
+        
+    } catch (Exception $e) {
+        $_SESSION['error_message'] = "Error processing transaction: " . $e->getMessage();
+    }
+    
+    // Redirect to prevent form resubmission
+    header('Location: admin_trades.php');
+    exit();
+}
 
 // Fetch all giftcard transactions with user details
 $giftcard_transactions = [];
@@ -675,6 +746,17 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
       flex-shrink: 0;
       width: 100%;
     }
+    /* Table font size and row hover */
+    .table.table-bordered.align-middle.bg-white {
+      font-size: 0.91rem;
+    }
+    .table.table-bordered.align-middle.bg-white tbody tr:hover {
+      background: #f1f3f4;
+      transition: background 0.15s;
+    }
+    .table td:last-child, .table th:last-child {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -698,7 +780,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
           <li><a class="dropdown-item" href="admin_dashboard.php">Dashboard</a></li>
           <li><a class="dropdown-item" href="admin_stats.php">Statistics</a></li>
           <li><hr class="dropdown-divider"></li>
-          <li><a class="dropdown-item" href="logout.php">Logout</a></li>
+          <li><a class="dropdown-item" href="admin_logout.php">Logout</a></li>
         </ul>
       </div>
     </div>
@@ -722,7 +804,25 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
   <!-- Main Content -->
   <main class="admin-main-content">
     <div class="container-fluid">
-      <!-- Success Message -->
+      <!-- Success/Error Messages -->
+      <?php if (isset($_SESSION['success_message'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <span class="bi bi-check-circle me-2"></span>
+          <?php echo htmlspecialchars($_SESSION['success_message']); ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
+      
+      <?php if (isset($_SESSION['error_message'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <span class="bi bi-exclamation-triangle me-2"></span>
+          <?php echo htmlspecialchars($_SESSION['error_message']); ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['error_message']); ?>
+      <?php endif; ?>
+      
       <?php if (isset($_SESSION['admin_message'])): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
           <span class="bi bi-check-circle me-2"></span>
@@ -786,17 +886,14 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                   <th style="font-size:0.97rem;">User</th>
                   <th style="font-size:0.97rem;">Giftcard</th>
                   <th style="font-size:0.97rem;">Card Image</th>
-                  <th style="font-size:0.97rem;">Date</th>
                   <th style="font-size:0.97rem;">Amount (USD)</th>
-                  <th style="font-size:0.97rem;">You Get (₦)</th>
-                  <th style="font-size:0.97rem;">Status</th>
-                  <th style="font-size:0.97rem;">Actions</th>
+                  <th style="font-size:0.97rem;">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <?php if (empty($giftcard_transactions)): ?>
                   <tr>
-                    <td colspan="8" class="text-center py-4 text-muted" style="font-size:0.95rem;">
+                    <td colspan="5" class="text-center py-4 text-muted" style="font-size:0.95rem;">
                       <span class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></span>
                       No giftcard trades found
                     </td>
@@ -818,49 +915,85 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                         <span class="text-muted" style="font-size:0.92em;">No image</span>
                       <?php endif; ?>
                     </td>
-                    <td class="text-muted" style="font-size:0.92em;"> <?php echo htmlspecialchars($trade['date']); ?> </td>
                     <td class="fw-bold" style="color:#19376d;font-size:0.97em;">$<?php echo number_format($trade['amount'],2); ?></td>
-                    <td class="fw-bold text-success" style="font-size:0.97em;">₦<?php echo ($trade['rate'] ? number_format($trade['amount'] * $trade['rate'],2) : '0.00'); ?></td>
                     <td>
-                      <span class="badge" style="font-size:0.93em;min-width:90px;
-                        <?php if ($trade['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
-                              elseif ($trade['status'] === 'Completed' || $trade['status'] === 'Paid Out') echo 'background:#d4edda;color:#155724;';
-                              elseif ($trade['status'] === 'Declined' || $trade['status'] === 'Rejected') echo 'background:#f8d7da;color:#721c24;';
-                        ?>">
-                        <?php if ($trade['status'] === 'Processing'): ?>
-                          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                        <?php endif; ?>
-                        <?php echo htmlspecialchars($trade['status']); ?>
-                      </span>
-                    </td>
-                    <td>
-                      <div class="d-flex gap-1">
-                        <?php if ($trade['status'] === 'Processing'): ?>
-                          <form method="POST" style="display: inline;">
-                            <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                            <input type="hidden" name="new_status" value="Completed">
-                            <button type="submit" name="update_giftcard_status" class="action-btn action-btn-success" 
-                                    title="Approve trade and add ₦<?php echo number_format($trade['amount'] * ($trade['rate'] ?? 0), 2); ?> to user balance">
-                              <span class="bi bi-check"></span>
-                            </button>
-                          </form>
-                          <form method="POST" style="display: inline;">
-                            <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                            <input type="hidden" name="new_status" value="Rejected">
-                            <button type="submit" name="update_giftcard_status" class="action-btn action-btn-danger" title="Reject Trade">
-                              <span class="bi bi-x"></span>
-                            </button>
-                          </form>
-                        <?php else: ?>
-                          <span class="text-muted">-</span>
-                        <?php endif; ?>
-                      </div>
+                      <button class="btn btn-sm btn-primary" 
+                        onclick='showGiftcardTradeModal(<?php echo json_encode([
+                          "id" => $trade["id"],
+                          "user_name" => $trade["user_name"],
+                          "user_email" => $trade["user_email"],
+                          "card_type" => $trade["card_type"],
+                          "card_image" => $trade["card_image"],
+                          "amount" => $trade["amount"],
+                          "rate" => $trade["rate"],
+                          "status" => $trade["status"]
+                        ]); ?>)'>
+                        <span class="bi bi-eye"></span> View
+                      </button>
                     </td>
                   </tr>
                   <?php endforeach; ?>
                 <?php endif; ?>
               </tbody>
             </table>
+          </div>
+          <!-- Modal for viewing/approving/declining giftcard trade -->
+          <div class="modal fade" id="giftcardTradeModal" tabindex="-1" aria-labelledby="giftcardTradeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <form method="POST" id="giftcardTradeActionForm" autocomplete="off" onsubmit="return handleGiftcardActionSubmit(event)">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="giftcardTradeModalLabel">Giftcard Trade Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" name="transaction_id" id="modal_giftcard_trade_id">
+                    <div class="row mb-3">
+                      <div class="col-md-6 mb-2 mb-md-0">
+                        <div class="fw-bold text-secondary mb-1">User</div>
+                        <div id="modal_giftcard_user"></div>
+                        <div id="modal_giftcard_user_email"></div>
+                      </div>
+                                           <div class="col-md-6 text-center">
+                       <div class="fw-bold text-secondary mb-1">Card Image</div>
+                       <img id="modal_giftcard_image" src="" alt="Card Image" style="width:140px;height:auto;border-radius:0.5rem;box-shadow:0 2px 12px rgba(0,0,0,0.10);border:2px solid #e9ecef;max-width:100%;margin-bottom:0.5rem;cursor:pointer;" onclick="openImageModal(this.src)">
+                     </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-2">
+                      <div class="col-md-6 mb-2 mb-md-0">
+                        <div class="fw-bold text-secondary mb-1">Giftcard</div>
+                        <div id="modal_giftcard_type"></div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="fw-bold text-secondary mb-1">Amount</div>
+                        <div>$<span id="modal_giftcard_amount"></span></div>
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col-md-6 mb-2 mb-md-0">
+                        <div class="fw-bold text-secondary mb-1">Estimated Payout</div>
+                        <div class="text-success fw-bold">₦<span id="modal_giftcard_payout"></span></div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="fw-bold text-secondary mb-1">Date</div>
+                        <div id="modal_giftcard_date" style="display:flex;align-items:center;gap:0.4em;font-size:1.01em;"><span class="bi bi-calendar-event"></span> <span id="modal_giftcard_date_value"></span></div>
+                      </div>
+                    </div>
+                    <div class="row mb-2">
+                      <div class="col-md-6">
+                        <div class="fw-bold text-secondary mb-1">Status</div>
+                        <span id="modal_giftcard_status_badge"></span>
+                      </div>
+                    </div>
+                  </div>
+                                   <div class="modal-footer" id="modal_giftcard_action_buttons">
+                   <!-- Approve/Decline buttons will be inserted here by JS if status is Processing -->
+                   <input type="hidden" name="action" id="modal_giftcard_action">
+                 </div>
+                </form>
+              </div>
+            </div>
           </div>
           
           <!-- Mobile Card View -->
@@ -971,7 +1104,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                         <div class="d-flex gap-1">
                           <form method="POST" style="display: inline;">
                             <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                            <input type="hidden" name="new_status" value="Completed">
+                            <input type="hidden" name="action" value="approve">
                             <button type="submit" name="update_giftcard_status" class="action-btn action-btn-success" 
                                     title="Approve trade and add ₦<?php echo number_format($trade['amount'] * ($trade['rate'] ?? 0), 2); ?> to user balance">
                               <span class="bi bi-check"></span> Approve
@@ -979,7 +1112,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                           </form>
                           <form method="POST" style="display: inline;">
                             <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                            <input type="hidden" name="new_status" value="Rejected">
+                            <input type="hidden" name="action" value="decline">
                             <button type="submit" name="update_giftcard_status" class="action-btn action-btn-danger" title="Reject Trade">
                               <span class="bi bi-x"></span> Reject
                             </button>
@@ -1068,7 +1201,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                            ?>
                            <form method="POST" style="display: inline;">
                              <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                             <input type="hidden" name="new_status" value="Completed">
+                             <input type="hidden" name="action" value="approve">
                              <button type="submit" name="update_bitcoin_status" class="action-btn action-btn-success" 
                                      title="Approve trade and add ₦<?php echo number_format($estimated_payout, 2); ?> to user balance">
                                <span class="bi bi-check"></span>
@@ -1076,7 +1209,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                            </form>
                            <form method="POST" style="display: inline;">
                              <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                             <input type="hidden" name="new_status" value="Rejected">
+                             <input type="hidden" name="action" value="decline">
                              <button type="submit" name="update_bitcoin_status" class="action-btn action-btn-danger" title="Reject Trade">
                                <span class="bi bi-x"></span>
                              </button>
@@ -1206,7 +1339,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                       <div class="d-flex gap-1">
                         <form method="POST" style="display: inline;">
                           <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                          <input type="hidden" name="new_status" value="Completed">
+                          <input type="hidden" name="action" value="approve">
                           <button type="submit" name="update_bitcoin_status" class="action-btn action-btn-success" 
                                   title="Approve trade and add ₦<?php echo number_format($estimated_payout, 2); ?> to user balance">
                             <span class="bi bi-check"></span> Approve
@@ -1214,7 +1347,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                         </form>
                         <form method="POST" style="display: inline;">
                           <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
-                          <input type="hidden" name="new_status" value="Rejected">
+                          <input type="hidden" name="action" value="decline">
                           <button type="submit" name="update_bitcoin_status" class="action-btn action-btn-danger" title="Reject Trade">
                             <span class="bi bi-x"></span> Reject
                           </button>
@@ -1296,6 +1429,98 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
     setInterval(function() {
       // You can implement AJAX refresh here instead of full page reload
     }, 30000);
+    
+    // Function to update modal status after action
+    function updateModalStatus(newStatus) {
+      const statusBadge = document.getElementById('modal_giftcard_status_badge');
+      if (statusBadge) {
+        let badge = '<span class="badge px-3 py-2 fw-bold" style="font-size:1em;';
+        if (newStatus === 'approved') badge += 'background:#d4edda;color:#155724;';
+        else if (newStatus === 'declined') badge += 'background:#f8d7da;color:#721c24;';
+        else badge += 'background:#e9ecef;color:#888;';
+        badge += '">' + newStatus.charAt(0).toUpperCase() + newStatus.slice(1) + '</span>';
+        statusBadge.innerHTML = badge;
+      }
+      
+      // Update action buttons
+      const actionButtons = document.getElementById('modal_giftcard_action_buttons');
+      if (actionButtons) {
+        actionButtons.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+      }
+    }
+
+    let giftcardModalSubmitting = false;
+    function showGiftcardTradeModal(trade) {
+      document.getElementById('modal_giftcard_trade_id').value = trade.id;
+      document.getElementById('modal_giftcard_user').textContent = trade.user_name;
+      document.getElementById('modal_giftcard_user_email').innerHTML = `<a href="mailto:${trade.user_email}">${trade.user_email}</a>`;
+      document.getElementById('modal_giftcard_type').textContent = trade.card_type;
+      document.getElementById('modal_giftcard_image').src = trade.card_image || '';
+      document.getElementById('modal_giftcard_amount').textContent = Number(trade.amount).toLocaleString('en-US', {minimumFractionDigits:2});
+      var payout = (Number(trade.amount) * Number(trade.rate || 0));
+      document.getElementById('modal_giftcard_payout').textContent = payout.toLocaleString('en-NG', {maximumFractionDigits:2});
+      document.getElementById('modal_giftcard_date_value').textContent = trade.date ? new Date(trade.date).toLocaleString('en-US', {dateStyle:'medium', timeStyle:'short'}) : 'N/A';
+      // Status badge
+      var status = trade.status;
+      var badge = '<span class="badge px-3 py-2 fw-bold" style="font-size:1em;';
+      if (status === 'Processing') badge += 'background:#fff3cd;color:#856404;';
+      else if (status === 'Completed' || status === 'Paid Out') badge += 'background:#d4edda;color:#155724;';
+      else if (status === 'Declined' || status === 'Rejected') badge += 'background:#f8d7da;color:#721c24;';
+      else badge += 'background:#e9ecef;color:#888;';
+      badge += '">' + status + '</span>';
+      document.getElementById('modal_giftcard_status_badge').innerHTML = badge;
+      // Action buttons
+      var actionBtns = document.getElementById('modal_giftcard_action_buttons');
+      actionBtns.innerHTML = '';
+      if (trade.status === 'Processing') {
+        actionBtns.innerHTML = `
+          <button type="submit" name="update_giftcard_status" value="1" class="btn btn-success" id="modalApproveBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Approve trade and credit user">
+            <span class="bi bi-check"></span> <span id="modalApproveText">Approve</span>
+            <span id="modalApproveSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="btn btn-danger" id="modalDeclineBtn" onclick="submitGiftcardDecline()" data-bs-toggle="tooltip" data-bs-placement="top" title="Decline trade">
+            <span class="bi bi-x"></span> <span id="modalDeclineText">Decline</span>
+            <span id="modalDeclineSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+          </button>
+        `;
+        setTimeout(() => {
+          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+          tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+        }, 200);
+      }
+      var modal = new bootstrap.Modal(document.getElementById('giftcardTradeModal'));
+      modal.show();
+    }
+    function submitGiftcardDecline() {
+      if (giftcardModalSubmitting) return;
+      giftcardModalSubmitting = true;
+      
+      // Set action to decline
+      document.getElementById('modal_giftcard_action').value = 'decline';
+      
+      // Disable buttons and show spinner
+      document.getElementById('modalDeclineBtn').disabled = true;
+      document.getElementById('modalDeclineSpinner').classList.remove('d-none');
+      document.getElementById('modalDeclineText').textContent = 'Declining...';
+      
+      // Submit the form
+      document.getElementById('giftcardTradeActionForm').submit();
+    }
+    function handleGiftcardActionSubmit(e) {
+      if (giftcardModalSubmitting) return false;
+      giftcardModalSubmitting = true;
+      
+      // Set action to approve
+      document.getElementById('modal_giftcard_action').value = 'approve';
+      
+      var approveBtn = document.getElementById('modalApproveBtn');
+      if (approveBtn) {
+        approveBtn.disabled = true;
+        document.getElementById('modalApproveSpinner').classList.remove('d-none');
+        document.getElementById('modalApproveText').textContent = 'Approving...';
+      }
+      return true;
+    }
   </script>
 </body>
 </html> 

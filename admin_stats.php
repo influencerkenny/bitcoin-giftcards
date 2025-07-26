@@ -3,11 +3,11 @@ session_start();
 header('Content-Type: application/json');
 require_once 'db.php';
 
-// For now, assume admin is logged in. Add proper admin authentication later.
-// if (!isset($_SESSION['admin_id'])) {
-//     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-//     exit;
-// }
+// Check if admin is logged in
+if (!isset($_SESSION['admin_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit;
+}
 
 try {
     // Fetch live statistics

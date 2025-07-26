@@ -1,7 +1,14 @@
 <?php
 session_start();
 require_once 'db.php';
-$admin_name = 'Admin';
+
+// Check if admin is logged in
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: admin_login.php');
+    exit();
+}
+
+$admin_name = $_SESSION['admin_name'] ?? 'Admin';
 // Handle add, edit, delete actions (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['delete_card_id'])) {

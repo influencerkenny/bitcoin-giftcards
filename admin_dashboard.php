@@ -1,7 +1,14 @@
 <?php
 session_start();
 require_once 'db.php';
-$admin_name = 'Admin';
+
+// Check if admin is logged in
+if (!isset($_SESSION['admin_id'])) {
+    header('Location: admin_login.php');
+    exit();
+}
+
+$admin_name = $_SESSION['admin_name'] ?? 'Admin';
 
 // Fetch live statistics
 $total_users = $db->query('SELECT COUNT(*) FROM users')->fetch_row()[0];
