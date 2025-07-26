@@ -26,16 +26,17 @@ $stmt->close();
 
 // Fetch Giftcard transactions
 $giftcard_transactions = [];
-$stmt = $db->prepare('SELECT card_type, amount, date, status FROM giftcard_transactions WHERE user_id = ? ORDER BY date DESC LIMIT 5');
+$stmt = $db->prepare('SELECT card_type, amount, date, status, card_image FROM giftcard_transactions WHERE user_id = ? ORDER BY date DESC LIMIT 5');
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
-$stmt->bind_result($gc_type, $gc_amount, $gc_date, $gc_status);
+$stmt->bind_result($gc_type, $gc_amount, $gc_date, $gc_status, $gc_image);
 while ($stmt->fetch()) {
   $giftcard_transactions[] = [
     'card_type' => $gc_type,
     'amount' => $gc_amount,
     'date' => $gc_date,
-    'status' => $gc_status
+    'status' => $gc_status,
+    'card_image' => $gc_image
   ];
 }
 $stmt->close();
@@ -394,24 +395,27 @@ $stmt->close();
             <div class="text-muted text-center">No transactions found.</div>
           <?php else: ?>
             <div class="giftcard-list">
-              <?php foreach ($giftcard_transactions as $tx): ?>
-                <div class="giftcard-row d-flex align-items-center gap-3 mb-3 p-2 rounded" style="background:#f8fafd;">
-                  <div class="fw-semibold flex-grow-1" style="font-size:1.08rem;min-width:120px;"> <?php echo htmlspecialchars($tx['card_type']); ?> </div>
-                  <span class="badge giftcard-status-badge <?php
-                    echo ($tx['status'] === 'Completed' || $tx['status'] === 'Paid Out') ? 'paid' :
-                         ($tx['status'] === 'Pending' ? 'pending' : 'declined');
-                  ?>"> 
-                    <?php echo ($tx['status'] === 'Completed' ? 'PAID OUT' : strtoupper($tx['status'])); ?>
-                  </span>
-                  <span class="giftcard-amount ms-2 fw-bold" style="color:#19376d;">
-                    <?php
-                      $naira = number_format($tx['amount'] * 240, 0); // Simulate rate, replace with real
-                      $usd = number_format($tx['amount'], 2);
-                      echo 'AMOUNT: ₦' . $naira . ' ($' . $usd . ' @ ₦240)';
-                    ?>
-                  </span>
-                </div>
-              <?php endforeach; ?>
+                          <?php foreach ($giftcard_transactions as $tx): ?>
+              <div class="giftcard-row d-flex align-items-center gap-3 mb-3 p-2 rounded" style="background:#f8fafd;">
+                <?php if (!empty($tx['card_image'])): ?>
+                  <img src="<?php echo htmlspecialchars($tx['card_image']); ?>" alt="Card Image" style="width:40px;height:30px;object-fit:cover;border-radius:0.3rem;cursor:pointer;" onclick="openImageModal('<?php echo htmlspecialchars($tx['card_image']); ?>')" title="Click to view larger image">
+                <?php endif; ?>
+                <div class="fw-semibold flex-grow-1" style="font-size:1.08rem;min-width:120px;"> <?php echo htmlspecialchars($tx['card_type']); ?> </div>
+                <span class="badge giftcard-status-badge <?php
+                  echo ($tx['status'] === 'Completed' || $tx['status'] === 'Paid Out') ? 'paid' :
+                       ($tx['status'] === 'Pending' ? 'pending' : 'declined');
+                ?>"> 
+                  <?php echo ($tx['status'] === 'Completed' ? 'PAID OUT' : strtoupper($tx['status'])); ?>
+                </span>
+                <span class="giftcard-amount ms-2 fw-bold" style="color:#19376d;">
+                  <?php
+                    $naira = number_format($tx['amount'] * 240, 0); // Simulate rate, replace with real
+                    $usd = number_format($tx['amount'], 2);
+                    echo 'AMOUNT: ₦' . $naira . ' ($' . $usd . ' @ ₦240)';
+                  ?>
+                </span>
+              </div>
+            <?php endforeach; ?>
             </div>
           <?php endif; ?>
         </div>
@@ -431,6 +435,22 @@ $stmt->close();
       </div>
     </div>
   </main>
+  
+  <!-- Image Modal -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="imageModalLabel">Card Image</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="Card Image" style="max-width:100%;height:auto;border-radius:0.5rem;">
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!-- Footer -->
   <footer>
     &copy; <?php echo date('Y'); ?> Giftcard & Bitcoin Trading. All Rights Reserved. &middot;
@@ -483,7 +503,7 @@ $stmt->close();
     toggleBalanceBtn.addEventListener('click', function() {
       balanceVisible = !balanceVisible;
       if (balanceVisible) {
-        walletBalance.textContent = '$' + actualBalance;
+        walletBalance.textContent = '₦' + actualBalance;
         balanceEye.classList.remove('bi-eye-slash');
         balanceEye.classList.add('bi-eye');
       } else {
@@ -521,6 +541,13 @@ $stmt->close();
           closeSidebar();
         }
       });
+    }
+    
+    // Function to open image modal
+    function openImageModal(imageSrc) {
+      document.getElementById('modalImage').src = imageSrc;
+      var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+      imageModal.show();
     }
   </script>
 </body>

@@ -20,6 +20,28 @@ $res->close();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_giftcard'])) {
   $card_id = intval($_POST['card_id']);
   $amount = floatval($_POST['amount']);
+  $card_image = null;
+  
+  // Handle file upload
+  if (isset($_FILES['card_image']) && $_FILES['card_image']['error'] === UPLOAD_ERR_OK) {
+    $upload_dir = 'uploads/card_images/';
+    if (!is_dir($upload_dir)) {
+      mkdir($upload_dir, 0755, true);
+    }
+    
+    $file_extension = strtolower(pathinfo($_FILES['card_image']['name'], PATHINFO_EXTENSION));
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    
+    if (in_array($file_extension, $allowed_extensions)) {
+      $filename = 'card_' . time() . '_' . rand(1000, 9999) . '.' . $file_extension;
+      $upload_path = $upload_dir . $filename;
+      
+      if (move_uploaded_file($_FILES['card_image']['tmp_name'], $upload_path)) {
+        $card_image = $upload_path;
+      }
+    }
+  }
+  
   // Get card name for record
   $stmt = $db->prepare('SELECT card_name FROM giftcard_rates WHERE id=?');
   if (!$stmt) {
@@ -30,12 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_giftcard'])) {
   $stmt->bind_result($card_name);
   $stmt->fetch();
   $stmt->close();
+  
   // Insert trade (status: Processing)
-  $stmt = $db->prepare('INSERT INTO giftcard_transactions (user_id, card_type, amount, status, date) VALUES (?, ?, ?, "Processing", NOW())');
+  $stmt = $db->prepare('INSERT INTO giftcard_transactions (user_id, card_type, amount, status, date, card_image) VALUES (?, ?, ?, "Processing", NOW(), ?)');
   if (!$stmt) {
     die('Database error: Failed to prepare statement for trade insert. Error: ' . $db->error);
   }
-  $stmt->bind_param('isd', $user_id, $card_name, $amount);
+  $stmt->bind_param('isds', $user_id, $card_name, $amount, $card_image);
   $stmt->execute();
   $stmt->close();
   header('Location: giftcard_trade.php');
@@ -44,20 +67,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trade_giftcard'])) {
 // Fetch user trade history
 $trade_history = [];
 // Also fetch the rate for each card_type
-$stmt = $db->prepare('SELECT t.card_type, t.amount, t.date, t.status, r.rate FROM giftcard_transactions t LEFT JOIN giftcard_rates r ON t.card_type = r.card_name WHERE t.user_id = ? ORDER BY t.date DESC');
+$stmt = $db->prepare('SELECT t.card_type, t.amount, t.date, t.status, r.rate, t.card_image FROM giftcard_transactions t LEFT JOIN giftcard_rates r ON t.card_type = r.card_name WHERE t.user_id = ? ORDER BY t.date DESC');
 if (!$stmt) {
   die('Database error: Failed to prepare statement for trade history. Error: ' . $db->error);
 }
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
-$stmt->bind_result($card_type, $amount, $date, $status, $rate);
+$stmt->bind_result($card_type, $amount, $date, $status, $rate, $card_image);
 while ($stmt->fetch()) {
   $trade_history[] = [
     'card_type' => $card_type,
     'amount' => $amount,
     'date' => $date,
     'status' => $status,
-    'rate' => $rate
+    'rate' => $rate,
+    'card_image' => $card_image
   ];
 }
 $stmt->close();
@@ -285,7 +309,7 @@ $stmt->close();
       <div class="modal fade" id="tradeModal" tabindex="-1" aria-labelledby="tradeModalLabel" aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content" style="border-radius:1.2rem;">
-            <form method="post" autocomplete="off">
+            <form method="post" enctype="multipart/form-data" autocomplete="off">
               <div class="modal-header" style="border-radius:1.2rem 1.2rem 0 0;">
                 <h5 class="modal-title" id="tradeModalLabel">Trade Giftcard</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -305,7 +329,11 @@ $stmt->close();
                   <input type="number" class="form-control" name="amount" id="modal_amount" min="1" step="0.01" required>
                 </div>
                 <div class="mb-3">
-                  
+                  <label for="card_image" class="form-label">Card Image <span class="text-danger">*</span></label>
+                  <input type="file" class="form-control" name="card_image" id="modal_card_image" accept="image/*" required>
+                  <div class="form-text">Upload a clear image of your giftcard. Supported formats: JPG, PNG, GIF, WEBP</div>
+                </div>
+                <div class="mb-3">
                   <div id="youGetValue" style="font-weight:700;color:#1a938a;font-size:1.1rem;">You Get: ₦0</div>
                 </div>
               </div>
@@ -328,6 +356,11 @@ $stmt->close();
             <?php foreach ($trade_history as $trade): ?>
             <div class="trade-history-card">
               <div class="card-title"><?php echo htmlspecialchars($trade['card_type']); ?></div>
+              <?php if (!empty($trade['card_image'])): ?>
+                <div class="trade-row mb-2">
+                  <img src="<?php echo htmlspecialchars($trade['card_image']); ?>" alt="Card Image" style="width:100%;max-width:200px;height:auto;border-radius:0.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                </div>
+              <?php endif; ?>
               <div class="trade-row"><span>Date:</span> <span class="text-muted"><?php echo htmlspecialchars($trade['date']); ?></span></div>
               <div class="trade-row"><span>Amount:</span> <span class="fw-bold">$<?php echo number_format($trade['amount'],2); ?></span></div>
               <div class="trade-row"><span>You Get:</span> <span class="fw-bold text-success">₦<?php echo ($trade['rate'] ? number_format($trade['amount'] * $trade['rate'],2) : '0.00'); ?></span></div>
@@ -339,13 +372,14 @@ $stmt->close();
             </div>
             <?php endforeach; ?>
           </div>
-          <!-- Table view for desktop -->
+                    <!-- Table view for desktop -->
           <div class="trade-history-table">
             <div class="table-responsive">
               <table class="table table-bordered align-middle bg-white" style="border-radius:1.1rem;overflow:hidden;">
                 <thead class="table-light">
                   <tr>
                     <th>Giftcard</th>
+                    <th>Card Image</th>
                     <th>Date</th>
                     <th>Amount (USD)</th>
                     <th>You Get (₦)</th>
@@ -356,6 +390,13 @@ $stmt->close();
                   <?php foreach ($trade_history as $trade): ?>
                   <tr>
                     <td style="font-weight:600;min-width:120px;"> <?php echo htmlspecialchars($trade['card_type']); ?> </td>
+                    <td>
+                      <?php if (!empty($trade['card_image'])): ?>
+                        <img src="<?php echo htmlspecialchars($trade['card_image']); ?>" alt="Card Image" style="width:60px;height:40px;object-fit:cover;border-radius:0.3rem;cursor:pointer;" onclick="openImageModal('<?php echo htmlspecialchars($trade['card_image']); ?>')">
+                      <?php else: ?>
+                        <span class="text-muted">No image</span>
+                      <?php endif; ?>
+                    </td>
                     <td class="text-muted" style="font-size:0.97rem;"> <?php echo htmlspecialchars($trade['date']); ?> </td>
                     <td class="fw-bold" style="color:#19376d;">$<?php echo number_format($trade['amount'],2); ?></td>
                     <td class="fw-bold text-success">₦<?php echo ($trade['rate'] ? number_format($trade['amount'] * $trade['rate'],2) : '0.00'); ?></td>
@@ -364,7 +405,7 @@ $stmt->close();
                         <?php if ($trade['status'] === 'Processing') echo 'background:#fff3cd;color:#856404;';
                               elseif ($trade['status'] === 'Completed' || $trade['status'] === 'Paid Out') echo 'background:#d4edda;color:#155724;';
                               elseif ($trade['status'] === 'Declined') echo 'background:#f8d7da;color:#721c24;';
-                      ?>">
+                        ?>">
                         <?php if ($trade['status'] === 'Processing'): ?>
                           <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                         <?php endif; ?>
@@ -381,6 +422,22 @@ $stmt->close();
       </div>
     </div>
   </main>
+  
+  <!-- Image Modal -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="imageModalLabel">Card Image</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="Card Image" style="max-width:100%;height:auto;border-radius:0.5rem;">
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!-- Footer -->
   <footer>
     &copy; <?php echo date('Y'); ?> Giftcard & Bitcoin Trading. All Rights Reserved. &middot;
@@ -462,6 +519,13 @@ $stmt->close();
         }
         document.getElementById('youGetValue').textContent = 'You Get: ₦' + youGet.toLocaleString('en-NG', {maximumFractionDigits:2});
       });
+    }
+    
+    // Function to open image modal
+    function openImageModal(imageSrc) {
+      document.getElementById('modalImage').src = imageSrc;
+      var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+      imageModal.show();
     }
   </script>
 </body>

@@ -355,7 +355,7 @@ $recent_giftcard = $db->query('SELECT user_id, card_type, amount, status, date F
       <li><a class="nav-link active" href="#"><span class="bi bi-speedometer2"></span> <span class="sidebar-label">Dashboard Overview</span></a></li>
       <li><a class="nav-link" href="#"><span class="bi bi-card-image"></span> <span class="sidebar-label">Gift Cards</span></a></li>
       <li><a class="nav-link" href="#"><span class="bi bi-people"></span> <span class="sidebar-label">Users</span></a></li>
-      <li><a class="nav-link" href="#"><span class="bi bi-arrow-left-right"></span> <span class="sidebar-label">Trades</span></a></li>
+      <li><a class="nav-link" href="admin_trades.php"><span class="bi bi-arrow-left-right"></span> <span class="sidebar-label">Trades</span></a></li>
       <li><a class="nav-link" href="#"><span class="bi bi-bank"></span> <span class="sidebar-label">Bank Accounts</span></a></li>
       <li><a class="nav-link" href="#"><span class="bi bi-box-arrow-right"></span> <span class="sidebar-label">Logout</span></a></li>
     </ul>
