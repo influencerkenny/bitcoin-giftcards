@@ -15,18 +15,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['transaction_id'])) {
     
     try {
         // Get transaction details first
-        $stmt = $pdo->prepare("SELECT gt.*, u.balance, u.id as user_id FROM giftcard_trades gt 
+        $stmt = $db->prepare("SELECT gt.*, u.balance, u.id as user_id FROM giftcard_transactions gt 
                               JOIN users u ON gt.user_id = u.id 
                               WHERE gt.id = ?");
-        $stmt->execute([$transaction_id]);
-        $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->bind_param('i', $transaction_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $transaction = $result->fetch_assoc();
         
         if (!$transaction) {
             throw new Exception("Transaction not found");
         }
         
-        // Check if transaction is in processing status
-        if ($transaction['status'] !== 'processing') {
+        // Check if transaction is in processing status (only for approve/decline actions)
+        if (($action === 'approve' || $action === 'decline') && $transaction['status'] !== 'processing') {
             throw new Exception("Transaction is not in processing status");
         }
         
@@ -36,22 +38,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['transaction_id'])) {
             
             // Update user balance
             $new_balance = $transaction['balance'] + $payout_amount;
-            $stmt = $pdo->prepare("UPDATE users SET balance = ? WHERE id = ?");
-            $stmt->execute([$new_balance, $transaction['user_id']]);
+            $stmt = $db->prepare("UPDATE users SET balance = ? WHERE id = ?");
+            $stmt->bind_param('di', $new_balance, $transaction['user_id']);
+            $stmt->execute();
             
             // Update transaction status
-            $stmt = $pdo->prepare("UPDATE giftcard_trades SET status = 'approved' WHERE id = ?");
-            $stmt->execute([$transaction_id]);
+            $stmt = $db->prepare("UPDATE giftcard_transactions SET status = 'approved' WHERE id = ?");
+            $stmt->bind_param('i', $transaction_id);
+            $stmt->execute();
             
             // Insert transaction record for user's transaction history (if table exists)
             try {
-                $stmt = $pdo->prepare("INSERT INTO transactions (user_id, type, amount, description, status, created_at) 
+                $stmt = $db->prepare("INSERT INTO transactions (user_id, type, amount, description, status, created_at) 
                                       VALUES (?, 'credit', ?, ?, 'completed', NOW())");
-                $stmt->execute([
-                    $transaction['user_id'], 
-                    $payout_amount, 
-                    "Giftcard trade approved - {$transaction['card_type']} card"
-                ]);
+                $stmt->bind_param('ids', $transaction['user_id'], $payout_amount, "Giftcard trade approved - {$transaction['card_type']} card");
+                $stmt->execute();
             } catch (Exception $e) {
                 // If transactions table doesn't exist, just log the error but don't fail the approval
                 error_log("Could not insert transaction record: " . $e->getMessage());
@@ -61,10 +62,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['transaction_id'])) {
             
         } elseif ($action === 'decline') {
             // Update transaction status to declined
-            $stmt = $pdo->prepare("UPDATE giftcard_trades SET status = 'declined' WHERE id = ?");
-            $stmt->execute([$transaction_id]);
+            $stmt = $db->prepare("UPDATE giftcard_transactions SET status = 'declined' WHERE id = ?");
+            $stmt->bind_param('i', $transaction_id);
+            $stmt->execute();
             
             $_SESSION['success_message'] = "Giftcard trade declined successfully.";
+        } elseif ($action === 'delete') {
+            // Delete the transaction permanently
+            $stmt = $db->prepare("DELETE FROM giftcard_transactions WHERE id = ?");
+            if (!$stmt) {
+                throw new Exception("Failed to prepare delete statement: " . $db->error);
+            }
+            $stmt->bind_param('i', $transaction_id);
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to execute delete: " . $stmt->error);
+            }
+            
+            if ($stmt->affected_rows > 0) {
+                $_SESSION['success_message'] = "Giftcard trade deleted successfully.";
+            } else {
+                throw new Exception("No transaction was deleted. Transaction ID may not exist.");
+            }
         }
         
     } catch (Exception $e) {
@@ -333,7 +351,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
       min-height: 20vh;
       transition: margin-left 0.2s;
       flex: 1 0 auto;
-      margin-top: 110%;
+      margin-top: 90%;
     }
     .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 64px; }
     /* --- Add unified width for main content card, matching admin_giftcard_types.php --- */
@@ -360,7 +378,7 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
       .admin-main-content {
         margin-left: 0;
         padding: 1.2rem 0.5rem;
-        padding-top: 460%;
+        padding-top: 250%;
         margin-top: 300%;
       }
       .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 0; }
@@ -941,13 +959,14 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
           <div class="modal fade" id="giftcardTradeModal" tabindex="-1" aria-labelledby="giftcardTradeModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
               <div class="modal-content">
-                <form method="POST" id="giftcardTradeActionForm" autocomplete="off" onsubmit="return handleGiftcardActionSubmit(event)">
+                <form method="POST" id="giftcardTradeActionForm" autocomplete="off">
+                  <input type="hidden" name="transaction_id" id="modal_giftcard_trade_id">
+                  <input type="hidden" name="action" id="modal_giftcard_action">
                   <div class="modal-header">
                     <h5 class="modal-title" id="giftcardTradeModalLabel">Giftcard Trade Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
                   <div class="modal-body">
-                    <input type="hidden" name="transaction_id" id="modal_giftcard_trade_id">
                     <div class="row mb-3">
                       <div class="col-md-6 mb-2 mb-md-0">
                         <div class="fw-bold text-secondary mb-1">User</div>
@@ -989,7 +1008,6 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                   </div>
                                    <div class="modal-footer" id="modal_giftcard_action_buttons">
                    <!-- Approve/Decline buttons will be inserted here by JS if status is Processing -->
-                   <input type="hidden" name="action" id="modal_giftcard_action">
                  </div>
                 </form>
               </div>
@@ -1100,8 +1118,8 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                   
                   <div class="trade-card-actions">
                     <div class="trade-card-date">
-                      <?php if ($trade['status'] === 'Processing'): ?>
-                        <div class="d-flex gap-1">
+                      <div class="d-flex gap-1">
+                        <?php if ($trade['status'] === 'Processing'): ?>
                           <form method="POST" style="display: inline;">
                             <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
                             <input type="hidden" name="action" value="approve">
@@ -1117,10 +1135,17 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
                               <span class="bi bi-x"></span> Reject
                             </button>
                           </form>
-                        </div>
-                      <?php else: ?>
-                        <span class="text-muted">No actions available</span>
-                      <?php endif; ?>
+                        <?php endif; ?>
+                        <form method="POST" style="display: inline;">
+                          <input type="hidden" name="transaction_id" value="<?php echo $trade['id']; ?>">
+                          <input type="hidden" name="action" value="delete">
+                          <button type="submit" name="update_giftcard_status" class="action-btn action-btn-warning" 
+                                  title="Delete transaction permanently" 
+                                  onclick="return confirm('Are you sure you want to delete this transaction? This action cannot be undone.')">
+                            <span class="bi bi-trash"></span> Delete
+                          </button>
+                        </form>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1472,9 +1497,20 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
       // Action buttons
       var actionBtns = document.getElementById('modal_giftcard_action_buttons');
       actionBtns.innerHTML = '';
+      
+      // Always show delete button
+      var deleteBtn = `
+        <button type="button" class="btn btn-warning" id="modalDeleteBtn" onclick="submitGiftcardDelete()" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete transaction permanently" style="cursor: pointer;">
+          <span class="bi bi-trash"></span> <span id="modalDeleteText">Delete</span>
+          <span id="modalDeleteSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+        </button>
+      `;
+      
+      console.log('Delete button HTML:', deleteBtn); // Debug log
+      
       if (trade.status === 'Processing') {
         actionBtns.innerHTML = `
-          <button type="submit" name="update_giftcard_status" value="1" class="btn btn-success" id="modalApproveBtn" data-bs-toggle="tooltip" data-bs-placement="top" title="Approve trade and credit user">
+          <button type="button" class="btn btn-success" id="modalApproveBtn" onclick="submitGiftcardApprove()" data-bs-toggle="tooltip" data-bs-placement="top" title="Approve trade and credit user">
             <span class="bi bi-check"></span> <span id="modalApproveText">Approve</span>
             <span id="modalApproveSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
           </button>
@@ -1482,12 +1518,29 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
             <span class="bi bi-x"></span> <span id="modalDeclineText">Decline</span>
             <span id="modalDeclineSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
           </button>
+          ${deleteBtn}
         `;
-        setTimeout(() => {
-          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-          tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
-        }, 200);
+      } else {
+        // For non-processing statuses, only show delete button
+        actionBtns.innerHTML = deleteBtn;
       }
+      
+      setTimeout(() => {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+        
+        // Add event listener to delete button as backup
+        var deleteBtn = document.getElementById('modalDeleteBtn');
+        if (deleteBtn) {
+          console.log('Delete button found, adding event listener'); // Debug log
+          deleteBtn.addEventListener('click', function(e) {
+            console.log('Delete button clicked via event listener'); // Debug log
+            submitGiftcardDelete();
+          });
+        } else {
+          console.log('Delete button not found'); // Debug log
+        }
+      }, 200);
       var modal = new bootstrap.Modal(document.getElementById('giftcardTradeModal'));
       modal.show();
     }
@@ -1506,8 +1559,8 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
       // Submit the form
       document.getElementById('giftcardTradeActionForm').submit();
     }
-    function handleGiftcardActionSubmit(e) {
-      if (giftcardModalSubmitting) return false;
+    function submitGiftcardApprove() {
+      if (giftcardModalSubmitting) return;
       giftcardModalSubmitting = true;
       
       // Set action to approve
@@ -1519,7 +1572,71 @@ $pending_bitcoin_trades = count(array_filter($bitcoin_transactions, function($t)
         document.getElementById('modalApproveSpinner').classList.remove('d-none');
         document.getElementById('modalApproveText').textContent = 'Approving...';
       }
-      return true;
+      
+      // Submit the form
+      document.getElementById('giftcardTradeActionForm').submit();
+    }
+    
+    function submitGiftcardDelete() {
+      console.log('submitGiftcardDelete function called'); // Debug log
+      
+      if (giftcardModalSubmitting) {
+        console.log('Already submitting, returning'); // Debug log
+        return;
+      }
+      
+      // Show confirmation dialog
+      if (!confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+        console.log('User cancelled deletion'); // Debug log
+        return;
+      }
+      
+      console.log('User confirmed deletion'); // Debug log
+      giftcardModalSubmitting = true;
+      
+      // Set action to delete
+      var actionField = document.getElementById('modal_giftcard_action');
+      var transactionIdField = document.getElementById('modal_giftcard_trade_id');
+      
+      if (!actionField || !transactionIdField) {
+        // Debug: Print the form's innerHTML for troubleshooting
+        var form = document.getElementById('giftcardTradeActionForm');
+        if (form) {
+          console.error('Form innerHTML:', form.innerHTML);
+        } else {
+          console.error('Form not found when trying to print innerHTML');
+        }
+        console.error('Required form fields not found!'); // Debug log
+        alert('Error: Form fields not found. Please try again.');
+        giftcardModalSubmitting = false;
+        return;
+      }
+      
+      actionField.value = 'delete';
+      
+      // Debug: Log the form data
+      console.log('Submitting delete form with transaction ID:', transactionIdField.value);
+      console.log('Action set to:', actionField.value);
+      
+      // Disable buttons and show spinner
+      var deleteBtn = document.getElementById('modalDeleteBtn');
+      var deleteSpinner = document.getElementById('modalDeleteSpinner');
+      var deleteText = document.getElementById('modalDeleteText');
+      
+      if (deleteBtn) deleteBtn.disabled = true;
+      if (deleteSpinner) deleteSpinner.classList.remove('d-none');
+      if (deleteText) deleteText.textContent = 'Deleting...';
+      
+      // Submit the form
+      var form = document.getElementById('giftcardTradeActionForm');
+      if (form) {
+        console.log('Submitting form...'); // Debug log
+        form.submit();
+      } else {
+        console.error('Form not found!'); // Debug log
+        alert('Error: Form not found. Please try again.');
+        giftcardModalSubmitting = false;
+      }
     }
   </script>
 </body>
