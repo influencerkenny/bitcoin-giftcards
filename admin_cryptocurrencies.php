@@ -158,6 +158,13 @@ $res->close();
             padding: 2rem;
             flex: 1;
         }
+        
+        /* Add extra top margin for desktop */
+        @media (min-width: 992px) {
+            .main-content {
+                margin-top: 40%;
+            }
+        }
         .dashboard-card {
             background: #fff;
             border-radius: 1.1rem;
@@ -287,7 +294,7 @@ $res->close();
         @media (max-width: 991px) {
             .admin-sidebar { left: -220px; transition: left 0.2s; }
             .admin-sidebar.show { left: 0; }
-            .main-content { margin-left: 0; }
+            .main-content { margin-left: 0; margin-top: 400%; }
             
             /* Hide desktop tables on mobile */
             .table-responsive {
