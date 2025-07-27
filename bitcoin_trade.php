@@ -43,7 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Calculate estimated payment based on transaction type
         $rate = ($transaction_type === 'buy') ? $buy_rate : $sell_rate;
-        $estimated_payment = $amount * $rate;
+        
+        // For BUY: User pays Naira, receives Crypto (Crypto Amount = Naira Amount / Rate)
+        // For SELL: User pays Crypto, receives Naira (Naira Amount = Crypto Amount * Rate)
+        if ($transaction_type === 'buy') {
+            $estimated_payment = $amount / $rate; // Crypto amount user will receive
+        } else {
+            $estimated_payment = $amount * $rate; // Naira amount user will receive
+        }
         
         // Handle file upload for payment proof
         $payment_proof = '';
@@ -64,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Insert transaction
         $insert_stmt = $db->prepare('INSERT INTO crypto_transactions (user_id, crypto_name, crypto_symbol, transaction_type, amount, rate, estimated_payment, btc_wallet, payment_proof, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, "Processing")');
-        $insert_stmt->bind_param('isssddds', $user_id, $crypto_name, $crypto_symbol, $transaction_type, $amount, $rate, $estimated_payment, $btc_wallet, $payment_proof);
+        $insert_stmt->bind_param('isssdddss', $user_id, $crypto_name, $crypto_symbol, $transaction_type, $amount, $rate, $estimated_payment, $btc_wallet, $payment_proof);
         
         if ($insert_stmt->execute()) {
             $_SESSION['success_message'] = "Your cryptocurrency trade has been submitted successfully and is being processed.";
@@ -185,6 +192,45 @@ $transactions_stmt->close();
             font-size: 0.8rem;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1002;
+        }
+        
+        /* Mobile sidebar improvements */
+        @media (max-width: 991px) {
+            .sidebar-toggler {
+                display: none; /* Hide desktop toggle on mobile */
+            }
+            
+            .sidebar {
+                top: 64px; /* Ensure it starts below header */
+                height: calc(100vh - 64px);
+                overflow-y: auto;
+            }
+            
+            .sidebar .nav-link {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+            
+            .sidebar .nav-link span:first-child {
+                font-size: 1.3rem;
+            }
+            
+            /* Mobile sidebar button improvements */
+            #mobileSidebarBtn {
+                transition: all 0.2s ease;
+            }
+            
+            #mobileSidebarBtn:hover {
+                transform: scale(1.1);
+                background-color: #1a938a;
+                border-color: #1a938a;
+                color: white;
+            }
+            
+            #mobileSidebarBtn:active {
+                transform: scale(0.95);
+            }
         }
         .main-content {
             margin-left: 220px;
@@ -256,6 +302,65 @@ $transactions_stmt->close();
             border: none;
             box-shadow: 0 20px 60px rgba(26, 147, 138, 0.2);
         }
+        
+        /* Enhanced modal styles */
+        .modal-header {
+            background: linear-gradient(135deg, #1a938a, #19376d);
+            color: white;
+            border-radius: 1.1rem 1.1rem 0 0;
+            border-bottom: none;
+        }
+        
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid #e9ecef;
+            padding: 1.5rem 2rem;
+        }
+        
+        /* Quick amount buttons */
+        .btn-outline-primary {
+            border-color: #1a938a;
+            color: #1a938a;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: #1a938a;
+            border-color: #1a938a;
+            color: white;
+        }
+        
+        /* Enhanced form controls */
+        .form-control-lg, .form-select-lg {
+            padding: 1rem 1.2rem;
+            font-size: 1.1rem;
+        }
+        
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+            font-weight: 600;
+            color: #1a938a;
+        }
+        
+        /* Card enhancements */
+        .card.border-primary {
+            border-color: #1a938a !important;
+        }
+        
+        .card.border-success {
+            border-color: #28a745 !important;
+        }
+        
+        .card-header.bg-primary {
+            background-color: #1a938a !important;
+        }
         .form-control, .form-select {
             border-radius: 0.8rem;
             border: 2px solid #e9ecef;
@@ -303,10 +408,34 @@ $transactions_stmt->close();
         
         /* Mobile responsive styles */
         @media (max-width: 991px) {
-            .sidebar { left: -220px; transition: left 0.2s; }
-            .sidebar.show { left: 0; }
-            .main-content { margin-left: 0; flex: 1; }
-            .main-content.collapsed { margin-left: 0; }
+            .sidebar { 
+                left: -220px; 
+                transition: left 0.3s ease; 
+                z-index: 1000;
+            }
+            .sidebar.show { 
+                left: 0; 
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+            .main-content { 
+                margin-left: 0; 
+                flex: 1; 
+                padding: 1rem;
+            }
+            .main-content.collapsed { 
+                margin-left: 0; 
+            }
+            
+            /* Ensure header stays on top */
+            .dashboard-header {
+                z-index: 1001;
+            }
+            
+            /* Improve overlay */
+            #sidebarOverlay {
+                z-index: 999;
+                background: rgba(0,0,0,0.5);
+            }
             
             /* Hide desktop tables on mobile */
             .table-responsive {
@@ -425,7 +554,7 @@ $transactions_stmt->close();
     <!-- Header -->
     <header class="dashboard-header">
         <div class="d-flex align-items-center gap-3 flex-grow-1">
-            <button class="btn btn-outline-primary d-lg-none me-2" id="mobileSidebarBtn" style="font-size:1.5rem;">
+            <button class="btn btn-outline-primary d-lg-none me-2" id="mobileSidebarBtn" style="font-size:1.5rem; transition: all 0.2s ease;">
                 <span class="bi bi-list"></span>
             </button>
             <div class="dashboard-logo flex-grow-1">
@@ -587,9 +716,25 @@ $transactions_stmt->close();
                                             </div>
                                         </td>
                                         <td><span class="badge bg-<?php echo $transaction['transaction_type'] === 'buy' ? 'success' : 'warning'; ?>"><?php echo ucfirst($transaction['transaction_type']); ?></span></td>
-                                        <td><div class="fw-bold"><?php echo number_format($transaction['amount'], 8); ?> <?php echo $transaction['crypto_symbol']; ?></div></td>
+                                        <td>
+                                            <div class="fw-bold">
+                                                <?php if ($transaction['transaction_type'] === 'buy'): ?>
+                                                    ₦<?php echo number_format($transaction['amount'], 2); ?>
+                                                <?php else: ?>
+                                                    <?php echo number_format($transaction['amount'], 8); ?> <?php echo $transaction['crypto_symbol']; ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
                                         <td><div class="text-muted">₦<?php echo number_format($transaction['rate'], 2); ?></div></td>
-                                        <td><div class="fw-bold text-success">₦<?php echo number_format($transaction['estimated_payment'], 2); ?></div></td>
+                                        <td>
+                                            <div class="fw-bold text-success">
+                                                <?php if ($transaction['transaction_type'] === 'buy'): ?>
+                                                    <?php echo number_format($transaction['estimated_payment'], 8); ?> <?php echo $transaction['crypto_symbol']; ?>
+                                                <?php else: ?>
+                                                    ₦<?php echo number_format($transaction['estimated_payment'], 2); ?>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
                                         <td><span class="status-badge status-<?php echo strtolower($transaction['status']); ?>"><?php echo htmlspecialchars($transaction['status']); ?></span></td>
                                         <td>
                                             <div class="text-muted">
@@ -633,7 +778,13 @@ $transactions_stmt->close();
                                     </div>
                                     <div class="crypto-card-item">
                                         <div class="crypto-card-label">Amount</div>
-                                        <div class="crypto-card-value crypto-card-amount"><?php echo number_format($transaction['amount'], 8); ?> <?php echo $transaction['crypto_symbol']; ?></div>
+                                        <div class="crypto-card-value crypto-card-amount">
+                                            <?php if ($transaction['transaction_type'] === 'buy'): ?>
+                                                ₦<?php echo number_format($transaction['amount'], 2); ?>
+                                            <?php else: ?>
+                                                <?php echo number_format($transaction['amount'], 8); ?> <?php echo $transaction['crypto_symbol']; ?>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                     <div class="crypto-card-item">
                                         <div class="crypto-card-label">Rate (₦)</div>
@@ -641,7 +792,13 @@ $transactions_stmt->close();
                                     </div>
                                     <div class="crypto-card-item">
                                         <div class="crypto-card-label">Est. Payment</div>
-                                        <div class="crypto-card-value crypto-card-payout">₦<?php echo number_format($transaction['estimated_payment'], 2); ?></div>
+                                        <div class="crypto-card-value crypto-card-payout">
+                                            <?php if ($transaction['transaction_type'] === 'buy'): ?>
+                                                <?php echo number_format($transaction['estimated_payment'], 8); ?> <?php echo $transaction['crypto_symbol']; ?>
+                                            <?php else: ?>
+                                                ₦<?php echo number_format($transaction['estimated_payment'], 2); ?>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                     <div class="crypto-card-item">
                                         <div class="crypto-card-label">Date</div>
@@ -682,16 +839,31 @@ $transactions_stmt->close();
                     <div class="modal-body">
                         <input type="hidden" name="transaction_type" id="transactionType">
                         
+                        <!-- Transaction Type Indicator -->
+                        <div class="mb-4">
+                            <div class="alert alert-info d-flex align-items-center" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <div>
+                                    <strong id="transactionTypeInfo">Buying Cryptocurrency</strong><br>
+                                    <small id="transactionTypeDescription">You'll pay in Naira and receive cryptocurrency</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Cryptocurrency Selection -->
-                        <div class="mb-3">
-                            <label for="crypto_id" class="form-label">Select Cryptocurrency</label>
-                            <select class="form-select" id="crypto_id" name="crypto_id" required onchange="updateRates()">
+                        <div class="mb-4">
+                            <label for="crypto_id" class="form-label fw-bold">
+                                <i class="bi bi-currency-bitcoin me-2"></i>
+                                Select Cryptocurrency
+                            </label>
+                            <select class="form-select form-select-lg" id="crypto_id" name="crypto_id" required onchange="updateRates()">
                                 <option value="">Choose a cryptocurrency...</option>
                                 <?php foreach ($cryptocurrencies as $crypto): ?>
                                     <option value="<?php echo $crypto['id']; ?>" 
                                             data-buy-rate="<?php echo $crypto['buy_rate']; ?>"
                                             data-sell-rate="<?php echo $crypto['sell_rate']; ?>"
-                                            data-symbol="<?php echo htmlspecialchars($crypto['crypto_symbol']); ?>">
+                                            data-symbol="<?php echo htmlspecialchars($crypto['crypto_symbol']); ?>"
+                                            data-name="<?php echo htmlspecialchars($crypto['crypto_name']); ?>">
                                         <?php echo htmlspecialchars($crypto['crypto_name']); ?> (<?php echo htmlspecialchars($crypto['crypto_symbol']); ?>)
                                     </option>
                                 <?php endforeach; ?>
@@ -699,52 +871,141 @@ $transactions_stmt->close();
                         </div>
 
                         <!-- Rate Display -->
-                        <div class="mb-3" id="rateDisplay" style="display: none;">
-                            <div class="alert alert-info">
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <strong>Buy Rate:</strong><br>
-                                        <span id="buyRateDisplay">₦0.00</span>
-                                    </div>
-                                    <div class="col-6">
-                                        <strong>Sell Rate:</strong><br>
-                                        <span id="sellRateDisplay">₦0.00</span>
+                        <div class="mb-4" id="rateDisplay" style="display: none;">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-graph-up me-2"></i>
+                                        Current Rates
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <div class="border-end">
+                                                <div class="text-muted small">Buy Rate</div>
+                                                <div class="h5 text-success mb-0" id="buyRateDisplay">₦0.00</div>
+                                                <small class="text-muted">per crypto unit</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="text-muted small">Sell Rate</div>
+                                            <div class="h5 text-danger mb-0" id="sellRateDisplay">₦0.00</div>
+                                            <small class="text-muted">per crypto unit</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Amount -->
-                        <div class="mb-3">
-                            <label for="amount" class="form-label">Amount (<span id="amountLabel">₦</span>)</label>
-                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required oninput="calculatePayment()">
+                        <!-- Amount Input Section -->
+                        <div class="mb-4">
+                            <label for="amount" class="form-label fw-bold">
+                                <i class="bi bi-cash-coin me-2"></i>
+                                Amount to <span id="amountAction">Pay</span> (<span id="amountLabel">₦</span>)
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text" id="amountSymbol">₦</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       min="1000" 
+                                       class="form-control" 
+                                       id="amount" 
+                                       name="amount" 
+                                       required 
+                                       oninput="calculatePayment()"
+                                       placeholder="Enter amount...">
+                            </div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Minimum amount: ₦1,000
+                            </div>
                         </div>
 
-                        <!-- You Get -->
-                        <div class="mb-3">
-                            <label class="form-label">You Get (<span id="cryptoSymbol">CRYPTO</span>)</label>
-                            <div class="form-control bg-light" id="estimatedPayment">0.00000000</div>
+                        <!-- You Get Section -->
+                        <div class="mb-4" id="youGetSection" style="display: none;">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-arrow-down-circle me-2 text-success"></i>
+                                You Will Receive
+                            </label>
+                            <div class="card border-success bg-light">
+                                <div class="card-body text-center">
+                                    <div class="h3 text-success mb-1" id="estimatedPayment">0.00000000</div>
+                                    <div class="text-muted" id="cryptoNameDisplay">CRYPTO</div>
+                                    <small class="text-muted">Estimated amount based on current rates</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Amount Buttons -->
+                        <div class="mb-4" id="quickAmounts" style="display: none;">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-lightning me-2"></i>
+                                Quick Amounts
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-outline-primary" onclick="setAmount(5000)">₦5,000</button>
+                                <button type="button" class="btn btn-outline-primary" onclick="setAmount(10000)">₦10,000</button>
+                                <button type="button" class="btn btn-outline-primary" onclick="setAmount(25000)">₦25,000</button>
+                                <button type="button" class="btn btn-outline-primary" onclick="setAmount(50000)">₦50,000</button>
+                                <button type="button" class="btn btn-outline-primary" onclick="setAmount(100000)">₦100,000</button>
+                            </div>
                         </div>
 
                         <!-- Destination Wallet Address -->
-                        <div class="mb-3">
-                            <label for="btc_wallet" class="form-label">Destination Wallet Address</label>
-                            <input type="text" class="form-control" id="btc_wallet" name="btc_wallet" required>
-                            <div class="form-text">Enter your cryptocurrency wallet address</div>
+                        <div class="mb-4">
+                            <label for="btc_wallet" class="form-label fw-bold">
+                                <i class="bi bi-wallet2 me-2"></i>
+                                Destination Wallet Address
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="btc_wallet" 
+                                   name="btc_wallet" 
+                                   required
+                                   placeholder="Enter your cryptocurrency wallet address">
+                            <div class="form-text">
+                                <i class="bi bi-shield-check me-1"></i>
+                                Double-check your wallet address. Incorrect addresses may result in permanent loss of funds.
+                            </div>
                         </div>
 
-                        <!-- Proof of Pay -->
-                        <div class="mb-3">
-                            <label for="payment_proof" class="form-label">Proof of Pay</label>
-                            <input type="file" class="form-control" id="payment_proof" name="payment_proof" accept="image/*,.pdf" required>
-                            <div class="form-text">Upload screenshot or PDF of your payment transaction</div>
+                        <!-- Proof of Payment -->
+                        <div class="mb-4">
+                            <label for="payment_proof" class="form-label fw-bold">
+                                <i class="bi bi-file-earmark-image me-2"></i>
+                                Proof of Payment
+                            </label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="payment_proof" 
+                                   name="payment_proof" 
+                                   accept="image/*,.pdf" 
+                                   required>
+                            <div class="form-text">
+                                <i class="bi bi-upload me-1"></i>
+                                Upload screenshot or PDF of your payment transaction (Bank transfer, card payment, etc.)
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                <label class="form-check-label" for="termsCheck">
+                                    I agree to the <a href="#" class="text-decoration-none">terms and conditions</a> and confirm that all information provided is accurate.
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" name="submit_crypto_trade" class="btn btn-primary">
-                            <i class="bi bi-check-circle"></i>
-                            Submit Trade
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-2"></i>
+                            Cancel
+                        </button>
+                        <button type="submit" name="submit_crypto_trade" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                            <i class="bi bi-check-circle me-2"></i>
+                            <span id="submitBtnText">Submit Trade</span>
                         </button>
                     </div>
                 </form>
@@ -769,38 +1030,116 @@ $transactions_stmt->close();
         mobileSidebarBtn.addEventListener('click', function() {
             sidebar.classList.toggle('show');
             sidebarOverlay.style.display = sidebar.classList.contains('show') ? 'block' : 'none';
+            
+            // Add visual feedback
+            if (sidebar.classList.contains('show')) {
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            } else {
+                document.body.style.overflow = ''; // Restore scrolling
+            }
         });
 
         sidebarOverlay.addEventListener('click', function() {
             sidebar.classList.remove('show');
             sidebarOverlay.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        });
+
+        // Close sidebar when clicking on navigation links (mobile)
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth < 992) {
+                    sidebar.classList.remove('show');
+                    sidebarOverlay.style.display = 'none';
+                    document.body.style.overflow = ''; // Restore scrolling
+                }
+            });
+        });
+
+        // Close sidebar when clicking outside (on main content)
+        mainContent.addEventListener('click', function() {
+            if (window.innerWidth < 992 && sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+        });
+
+        // Close sidebar on window resize if switching to desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 992) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+            }
         });
 
         // Trade modal functionality
         let currentTransactionType = '';
         let currentBuyRate = 0;
         let currentSellRate = 0;
+        let selectedCryptoName = '';
+        let selectedCryptoSymbol = '';
 
         function openTradeModal(type) {
             currentTransactionType = type;
             document.getElementById('transactionType').value = type;
             document.getElementById('tradeTypeText').textContent = type === 'buy' ? 'Buy Cryptocurrency' : 'Sell Cryptocurrency';
             
+            // Update transaction type info
+            const transactionTypeInfo = document.getElementById('transactionTypeInfo');
+            const transactionTypeDescription = document.getElementById('transactionTypeDescription');
+            
+            if (type === 'buy') {
+                transactionTypeInfo.textContent = 'Buying Cryptocurrency';
+                transactionTypeDescription.textContent = 'You\'ll pay in Naira and receive cryptocurrency';
+            } else {
+                transactionTypeInfo.textContent = 'Selling Cryptocurrency';
+                transactionTypeDescription.textContent = 'You\'ll receive Naira for your cryptocurrency';
+            }
+            
             // Update amount field based on transaction type
             const amountInput = document.getElementById('amount');
             const amountLabel = document.getElementById('amountLabel');
+            const amountAction = document.getElementById('amountAction');
+            const amountSymbol = document.getElementById('amountSymbol');
+            const youGetSection = document.getElementById('youGetSection');
+            const quickAmounts = document.getElementById('quickAmounts');
+            const submitBtnText = document.getElementById('submitBtnText');
+            const submitBtn = document.getElementById('submitBtn');
+
             if (type === 'buy') {
                 amountLabel.textContent = '₦';
                 amountInput.step = '0.01';
+                amountInput.min = '1000';
+                amountAction.textContent = 'Pay';
+                amountSymbol.textContent = '₦';
+                youGetSection.style.display = 'block';
+                quickAmounts.style.display = 'block';
+                submitBtnText.textContent = 'Buy Cryptocurrency';
             } else {
                 amountLabel.textContent = 'CRYPTO';
                 amountInput.step = '0.00000001';
+                amountInput.min = '0.00000001';
+                amountAction.textContent = 'Sell';
+                amountSymbol.textContent = 'CRYPTO';
+                youGetSection.style.display = 'block';
+                quickAmounts.style.display = 'none';
+                submitBtnText.textContent = 'Sell Cryptocurrency';
             }
             
-            // Reset form
+            // Reset form and UI
             document.getElementById('tradeForm').reset();
             document.getElementById('rateDisplay').style.display = 'none';
-            document.getElementById('estimatedPayment').textContent = type === 'buy' ? '0.00000000' : '₦0.00';
+            document.getElementById('youGetSection').style.display = 'none';
+            document.getElementById('quickAmounts').style.display = 'none';
+            document.getElementById('estimatedPayment').textContent = '0.00000000';
+            document.getElementById('cryptoNameDisplay').textContent = 'CRYPTO';
+            document.getElementById('submitBtn').disabled = true;
+            
+            // Reset crypto selection
+            selectedCryptoName = '';
+            selectedCryptoSymbol = '';
             
             new bootstrap.Modal(document.getElementById('tradeModal')).show();
         }
@@ -812,31 +1151,100 @@ $transactions_stmt->close();
             if (selectedOption.value) {
                 currentBuyRate = parseFloat(selectedOption.dataset.buyRate);
                 currentSellRate = parseFloat(selectedOption.dataset.sellRate);
-                document.getElementById('cryptoSymbol').textContent = selectedOption.dataset.symbol;
+                selectedCryptoName = selectedOption.dataset.name;
+                selectedCryptoSymbol = selectedOption.dataset.symbol;
                 
+                document.getElementById('cryptoNameDisplay').textContent = selectedCryptoName;
                 document.getElementById('buyRateDisplay').textContent = '₦' + currentBuyRate.toLocaleString();
                 document.getElementById('sellRateDisplay').textContent = '₦' + currentSellRate.toLocaleString();
                 document.getElementById('rateDisplay').style.display = 'block';
                 
+                // Show quick amounts for buy transactions
+                if (currentTransactionType === 'buy') {
+                    document.getElementById('quickAmounts').style.display = 'block';
+                }
+                
                 calculatePayment();
             } else {
                 document.getElementById('rateDisplay').style.display = 'none';
-                document.getElementById('estimatedPayment').textContent = currentTransactionType === 'buy' ? '0.00000000' : '₦0.00';
+                document.getElementById('youGetSection').style.display = 'none';
+                document.getElementById('quickAmounts').style.display = 'none';
+                document.getElementById('estimatedPayment').textContent = '0.00000000';
+                document.getElementById('cryptoNameDisplay').textContent = 'CRYPTO';
+                document.getElementById('submitBtn').disabled = true;
+                
+                selectedCryptoName = '';
+                selectedCryptoSymbol = '';
             }
         }
 
         function calculatePayment() {
             const amount = parseFloat(document.getElementById('amount').value) || 0;
             const rate = currentTransactionType === 'buy' ? currentBuyRate : currentSellRate;
+            const youGetSection = document.getElementById('youGetSection');
+            const submitBtn = document.getElementById('submitBtn');
             
-            if (currentTransactionType === 'buy') {
-                // For buying: amount in ₦, result in crypto
-                const cryptoAmount = amount / rate;
-                document.getElementById('estimatedPayment').textContent = cryptoAmount.toFixed(8);
+            // Only calculate if we have a valid amount and rate
+            if (amount > 0 && rate > 0 && selectedCryptoName) {
+                youGetSection.style.display = 'block';
+                
+                if (currentTransactionType === 'buy') {
+                    // For buying: amount in ₦, result in crypto
+                    const cryptoAmount = amount / rate;
+                    document.getElementById('estimatedPayment').textContent = cryptoAmount.toFixed(8);
+                    document.getElementById('cryptoNameDisplay').textContent = selectedCryptoName;
+                } else {
+                    // For selling: amount in crypto, result in ₦
+                    const estimatedPayment = amount * rate;
+                    document.getElementById('estimatedPayment').textContent = '₦' + estimatedPayment.toLocaleString();
+                    document.getElementById('cryptoNameDisplay').textContent = 'Naira';
+                }
+                
+                // Enable submit button if all required fields are filled
+                const walletAddress = document.getElementById('btc_wallet').value.trim();
+                const paymentProof = document.getElementById('payment_proof').files.length > 0;
+                const termsAccepted = document.getElementById('termsCheck').checked;
+                
+                if (walletAddress && paymentProof && termsAccepted) {
+                    submitBtn.disabled = false;
+                } else {
+                    submitBtn.disabled = true;
+                }
             } else {
-                // For selling: amount in crypto, result in ₦
-                const estimatedPayment = amount * rate;
-                document.getElementById('estimatedPayment').textContent = '₦' + estimatedPayment.toLocaleString();
+                youGetSection.style.display = 'none';
+                submitBtn.disabled = true;
+            }
+        }
+
+        function setAmount(amount) {
+            document.getElementById('amount').value = amount;
+            calculatePayment();
+        }
+
+        // Add event listeners for form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const walletInput = document.getElementById('btc_wallet');
+            const paymentProofInput = document.getElementById('payment_proof');
+            const termsCheck = document.getElementById('termsCheck');
+            
+            // Add event listeners for real-time validation
+            walletInput.addEventListener('input', validateForm);
+            paymentProofInput.addEventListener('change', validateForm);
+            termsCheck.addEventListener('change', validateForm);
+        });
+
+        function validateForm() {
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const walletAddress = document.getElementById('btc_wallet').value.trim();
+            const paymentProof = document.getElementById('payment_proof').files.length > 0;
+            const termsAccepted = document.getElementById('termsCheck').checked;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            // Enable submit button only if all required fields are filled and crypto is selected
+            if (amount > 0 && selectedCryptoName && walletAddress && paymentProof && termsAccepted) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
             }
         }
     </script>

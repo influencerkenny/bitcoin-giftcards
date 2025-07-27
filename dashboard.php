@@ -8,18 +8,22 @@ require_once 'db.php';
 $user_id = $_SESSION['user_id'];
 $user_name = htmlspecialchars($_SESSION['user_name']);
 
-// Fetch BTC transactions
-$btc_transactions = [];
-$stmt = $db->prepare('SELECT date, amount, status, txid FROM btc_transactions WHERE user_id = ? ORDER BY date DESC LIMIT 5');
+// Fetch Crypto transactions
+$crypto_transactions = [];
+$stmt = $db->prepare('SELECT crypto_name, crypto_symbol, transaction_type, amount, rate, estimated_payment, status, created_at FROM crypto_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 5');
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
-$stmt->bind_result($btc_date, $btc_amount, $btc_status, $btc_txid);
+$stmt->bind_result($crypto_name, $crypto_symbol, $transaction_type, $amount, $rate, $estimated_payment, $status, $created_at);
 while ($stmt->fetch()) {
-  $btc_transactions[] = [
-    'date' => $btc_date,
-    'amount' => $btc_amount,
-    'status' => $btc_status,
-    'txid' => $btc_txid
+  $crypto_transactions[] = [
+    'crypto_name' => $crypto_name,
+    'crypto_symbol' => $crypto_symbol,
+    'transaction_type' => $transaction_type,
+    'amount' => $amount,
+    'rate' => $rate,
+    'estimated_payment' => $estimated_payment,
+    'status' => $status,
+    'created_at' => $created_at
   ];
 }
 $stmt->close();
@@ -245,6 +249,13 @@ $stmt->close();
     .giftcard-status-badge.pending { background: #e3f2fd; color: #0d6efd; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .giftcard-status-badge.declined { background: #f8d7da; color: #dc3545; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
     .giftcard-amount { font-size: 1.01rem; letter-spacing: 0.01em; }
+    .crypto-list { margin-top: 0.5rem; }
+    .crypto-row { box-shadow: 0 1px 6px rgba(26,147,138,0.04); border-left: 4px solid #1a938a; }
+    .crypto-type-badge.buy { background: #e0f7fa; color: #007bff; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
+    .crypto-type-badge.sell { background: #fce4ec; color: #d63384; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
+    .crypto-status-badge.paid { background: #e6f4ea; color: #198754; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
+    .crypto-status-badge.pending { background: #e3f2fd; color: #0d6efd; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
+    .crypto-status-badge.declined { background: #f8d7da; color: #dc3545; font-weight: 600; border-radius: 1.2rem; padding: 0.45em 1.1em; font-size: 0.98em; }
   </style>
 </head>
 <body>
@@ -339,23 +350,32 @@ $stmt->close();
       </div>
     </div>
     <div class="row g-4">
-      <!-- Recent BTC Transactions -->
+      <!-- Recent Crypto Transactions -->
       <div class="col-lg-6">
         <div class="dashboard-card">
-          <h5 class="mb-3"><span class="bi bi-currency-bitcoin"></span> Recent BTC Transactions</h5>
-          <?php if (count($btc_transactions) === 0): ?>
+          <h5 class="mb-3"><span class="bi bi-currency-bitcoin"></span> Recent Crypto Transactions</h5>
+          <?php if (count($crypto_transactions) === 0): ?>
             <div class="text-muted text-center">No transactions found.</div>
           <?php else: ?>
-            <div class="btc-list">
-              <?php foreach ($btc_transactions as $tx): ?>
-                <div class="btc-row d-flex align-items-center gap-3 mb-3 p-2 rounded" style="background:#f8fafd;">
-                  <div class="fw-semibold" style="font-size:1.08rem;min-width:110px;">$<?php echo htmlspecialchars($tx['amount']); ?></div>
-                  <span class="badge btc-type-badge <?php echo ($tx['amount'] > 0 ? 'buy' : 'sell'); ?>"> <?php echo ($tx['amount'] > 0 ? 'BUY' : 'SELL'); ?> </span>
-                  <span class="badge btc-status-badge <?php
-                    echo ($tx['status'] === 'Completed' || $tx['status'] === 'Paid Out') ? 'paid' :
-                         ($tx['status'] === 'Pending' ? 'pending' : 'declined');
+            <div class="crypto-list">
+              <?php foreach ($crypto_transactions as $tx): ?>
+                <div class="crypto-row d-flex align-items-center gap-3 mb-3 p-2 rounded" style="background:#f8fafd;">
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold" style="font-size:1.08rem;color:#19376d;">
+                      <?php echo htmlspecialchars($tx['crypto_name']); ?> (<?php echo htmlspecialchars($tx['crypto_symbol']); ?>)
+                    </div>
+                    <div class="text-muted" style="font-size:0.9rem;">
+                      <?php echo htmlspecialchars($tx['amount']); ?> <?php echo htmlspecialchars($tx['crypto_symbol']); ?> @ ₦<?php echo number_format($tx['rate'], 2); ?>
+                    </div>
+                  </div>
+                  <span class="badge crypto-type-badge <?php echo ($tx['transaction_type'] === 'buy' ? 'buy' : 'sell'); ?>"> 
+                    <?php echo strtoupper($tx['transaction_type']); ?> 
+                  </span>
+                  <span class="badge crypto-status-badge <?php
+                    echo ($tx['status'] === 'Completed') ? 'paid' :
+                         ($tx['status'] === 'Processing' ? 'pending' : 'declined');
                   ?>"> 
-                    <?php echo ($tx['status'] === 'Completed' ? 'PAID OUT' : strtoupper($tx['status'])); ?>
+                    <?php echo strtoupper($tx['status']); ?>
                   </span>
                 </div>
               <?php endforeach; ?>

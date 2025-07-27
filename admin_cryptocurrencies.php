@@ -126,35 +126,39 @@ $res->close();
             color: #fff;
             min-height: 100vh;
             padding: 2rem 0.5rem 2rem 0.5rem;
-            width: 220px;
+            width: 200px;
             position: fixed;
-            top: 64px;
+            top: 0;
             left: 0;
-            z-index: 10;
-            transition: width 0.2s;
+            z-index: 120;
+            transition: width 0.2s, left 0.2s;
+            box-shadow: 2px 0 16px rgba(26,147,138,0.07);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
         }
         .admin-sidebar .nav-link {
             color: #fff;
-            padding: 0.8rem 1rem;
-            border-radius: 0.5rem;
+            font-weight: 500;
+            border-radius: 0.7rem;
             margin-bottom: 0.3rem;
-            transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 0.7rem;
+            padding: 0.7rem 1rem;
+            transition: background 0.15s, color 0.15s;
+            font-size: 0.95rem;
             text-decoration: none;
         }
-        .admin-sidebar .nav-link:hover, .admin-sidebar .nav-link.active {
-            background: rgba(255,255,255,0.15);
-            color: #fff;
+        .admin-sidebar .nav-link.active, .admin-sidebar .nav-link:hover {
+            background: #ffbf3f;
+            color: #19376d;
         }
-        .admin-sidebar .nav-link span:first-child {
-            font-size: 1.2rem;
-            min-width: 20px;
-        }
+        .admin-sidebar .nav-link .bi { font-size: 1.1rem; }
+        .admin-sidebar .sidebar-label { transition: opacity 0.2s; }
         .main-content {
-            margin-left: 220px;
-            margin-top: 64px;
+            margin-left: 230px;
+            margin-top: 7rem;
             padding: 2rem;
             flex: 1;
         }
@@ -292,9 +296,25 @@ $res->close();
         
         /* Mobile responsive styles */
         @media (max-width: 991px) {
-            .admin-sidebar { left: -220px; transition: left 0.2s; }
+            .admin-sidebar { left: -200px; transition: left 0.2s; }
             .admin-sidebar.show { left: 0; }
             .main-content { margin-left: 0; margin-top: 400%; }
+            
+            /* Mobile sidebar button styles */
+            #mobileSidebarBtn {
+                background: #1a938a;
+                border-color: #1a938a;
+                color: white;
+                border-radius: 0.5rem;
+                padding: 0.5rem 0.75rem;
+                transition: all 0.3s ease;
+            }
+            
+            #mobileSidebarBtn:hover {
+                background: #19376d;
+                border-color: #19376d;
+                transform: translateY(-1px);
+            }
             
             /* Hide desktop tables on mobile */
             .table-responsive {
@@ -376,6 +396,9 @@ $res->close();
     <!-- Header -->
     <header class="admin-header">
         <div class="d-flex align-items-center gap-3 flex-grow-1">
+            <button class="btn btn-outline-primary d-lg-none me-2" id="mobileSidebarBtn" style="font-size:1.5rem;">
+                <span class="bi bi-list"></span>
+            </button>
             <div class="admin-logo flex-grow-1">
                 <i class="bi bi-currency-bitcoin"></i>
                 Admin Dashboard
@@ -398,15 +421,17 @@ $res->close();
     <!-- Sidebar -->
     <nav class="admin-sidebar" id="sidebar">
         <ul class="nav flex-column">
-            <li><a class="nav-link" href="admin_dashboard.php"><span class="bi bi-speedometer2"></span> <span>Dashboard Overview</span></a></li>
-            <li><a class="nav-link" href="admin_giftcard_types.php"><span class="bi bi-gift"></span> <span>Giftcard Types</span></a></li>
-            <li><a class="nav-link active" href="admin_cryptocurrencies.php"><span class="bi bi-currency-bitcoin"></span> <span>Cryptocurrencies</span></a></li>
-            <li><a class="nav-link" href="admin_trades.php"><span class="bi bi-arrow-left-right"></span> <span>Trades</span></a></li>
-            <li><a class="nav-link" href="admin_bank_accounts.php"><span class="bi bi-bank"></span> <span>Bank Accounts</span></a></li>
-            <li><a class="nav-link" href="admin_stats.php"><span class="bi bi-graph-up"></span> <span>Statistics</span></a></li>
-            <li><a class="nav-link" href="admin_logout.php"><span class="bi bi-box-arrow-right"></span> <span>Logout</span></a></li>
+            <li><a class="nav-link" href="admin_dashboard.php"><i class="bi bi-speedometer2"></i> <span class="sidebar-label">Dashboard Overview</span></a></li>
+            <li><a class="nav-link" href="admin_giftcard_types.php"><i class="bi bi-gift"></i> <span class="sidebar-label">Giftcard Types</span></a></li>
+            <li><a class="nav-link active" href="admin_cryptocurrencies.php"><i class="bi bi-currency-bitcoin"></i> <span class="sidebar-label">Cryptocurrencies</span></a></li>
+            <li><a class="nav-link" href="admin_trades.php"><i class="bi bi-arrow-left-right"></i> <span class="sidebar-label">Trades</span></a></li>
+            <li><a class="nav-link" href="admin_bank_accounts.php"><i class="bi bi-bank"></i> <span class="sidebar-label">Bank Accounts</span></a></li>
+            <li><a class="nav-link" href="admin_stats.php"><i class="bi bi-graph-up"></i> <span class="sidebar-label">Statistics</span></a></li>
+            <li><a class="nav-link" href="admin_logout.php"><i class="bi bi-box-arrow-right"></i> <span class="sidebar-label">Logout</span></a></li>
         </ul>
     </nav>
+    
+    <div id="sidebarOverlay" style="display:none;position:fixed;inset:0;z-index:99;background:rgba(10,23,78,0.35);transition:opacity 0.2s;"></div>
 
     <!-- Main Content -->
     <main class="main-content" id="mainContent">
@@ -782,6 +807,21 @@ $res->close();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Mobile sidebar toggle functionality
+        const sidebar = document.getElementById('sidebar');
+        const mobileSidebarBtn = document.getElementById('mobileSidebarBtn');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileSidebarBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.style.display = sidebar.classList.contains('show') ? 'block' : 'none';
+        });
+
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            sidebarOverlay.style.display = 'none';
+        });
+
         function editCrypto(crypto) {
             document.getElementById('edit_crypto_id').value = crypto.id;
             document.getElementById('edit_crypto_name').value = crypto.crypto_name;

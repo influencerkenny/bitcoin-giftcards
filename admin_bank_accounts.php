@@ -81,9 +81,9 @@ $res->close();
     .admin-logo { font-weight: 700; font-size: 1.3rem; color: #1a938a; letter-spacing: 1px; display: flex; align-items: center; gap: 0.5rem; }
     .admin-sidebar { background: linear-gradient(180deg, #1a938a 0%, #19376d 100%); color: #fff; min-height: 100vh; padding: 2rem 0.5rem 2rem 0.5rem; width: 200px; position: fixed; top: 0; left: 0; z-index: 120; transition: width 0.2s, left 0.2s; box-shadow: 2px 0 16px rgba(26,147,138,0.07); display: flex; flex-direction: column; align-items: stretch; }
     .admin-sidebar.collapsed { width: 64px; }
-    .admin-sidebar .nav-link { color: #fff; font-weight: 500; border-radius: 0.7rem; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1rem; transition: background 0.15s, color 0.15s; font-size: 1.08rem; }
+    .admin-sidebar .nav-link { color: #fff; font-weight: 500; border-radius: 0.7rem; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1rem; transition: background 0.15s, color 0.15s; font-size: 0.95rem; }
     .admin-sidebar .nav-link.active, .admin-sidebar .nav-link:hover { background: #ffbf3f; color: #19376d; }
-    .admin-sidebar .nav-link .bi { font-size: 1.3rem; }
+    .admin-sidebar .nav-link .bi { font-size: 1.1rem; }
     .admin-sidebar .sidebar-label { transition: opacity 0.2s; }
     .admin-sidebar.collapsed .sidebar-label { opacity: 0; width: 0; overflow: hidden; }
     .admin-sidebar-toggler { background: none; border: none; color: #fff; font-size: 1.5rem; margin-bottom: 2rem; margin-left: 0.5rem; cursor: pointer; align-self: flex-end; transition: color 0.2s; }

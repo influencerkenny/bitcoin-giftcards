@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS crypto_transactions (
     transaction_type ENUM('buy', 'sell') NOT NULL,
     amount DECIMAL(15,8) NOT NULL,
     rate DECIMAL(15,2) NOT NULL,
-    estimated_payment DECIMAL(15,2) NOT NULL,
+    estimated_payment DECIMAL(20,8) NOT NULL,
     btc_wallet VARCHAR(255),
     payment_proof VARCHAR(255),
     status ENUM('Processing', 'Completed', 'Rejected') DEFAULT 'Processing',

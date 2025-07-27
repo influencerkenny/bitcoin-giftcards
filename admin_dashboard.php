@@ -117,13 +117,13 @@ $recent_crypto = $db->query('
       gap: 0.7rem;
       padding: 0.7rem 1rem;
       transition: background 0.15s, color 0.15s;
-      font-size: 1.08rem;
+      font-size: 0.95rem;
     }
     .admin-sidebar .nav-link.active, .admin-sidebar .nav-link:hover {
       background: #ffbf3f;
       color: #19376d;
     }
-    .admin-sidebar .nav-link .bi { font-size: 1.3rem; }
+    .admin-sidebar .nav-link .bi { font-size: 1.1rem; }
     .admin-sidebar .sidebar-label { transition: opacity 0.2s; }
     .admin-sidebar.collapsed .sidebar-label { opacity: 0; width: 0; overflow: hidden; }
     .admin-sidebar-toggler {
@@ -139,11 +139,11 @@ $recent_crypto = $db->query('
     }
     .admin-main-content {
       margin-left: 230px;
-      padding: 2rem 2rem 1.5rem 2rem;
+      padding: 2rem 2rem 1.2rem 2rem;
       min-height: 60vh;
       transition: margin-left 0.2s;
       flex: 1 0 auto;
-      margin-top: 7rem;
+      margin-top: 1105px;
     }
     .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 64px; }
     @media (max-width: 991px) {
@@ -152,7 +152,7 @@ $recent_crypto = $db->query('
       .admin-sidebar.open { left: 0; }
       #adminSidebarOverlay { display: none; }
       #adminSidebarOverlay.active { display: block; }
-      .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 60px; margin-top: 1000px !important; }
+      .admin-main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 1105px; margin-top: 100% !important; }
       .admin-sidebar.collapsed ~ .admin-main-content { margin-left: 0; }
       .admin-widget-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -161,7 +161,7 @@ $recent_crypto = $db->query('
         padding-top: 2.5rem;
       }
       .widgets-container {
-        margin-top: 90px !important;
+        margin-top: 120px !important;
       }
     }
     @media (max-width: 600px) {
@@ -411,7 +411,7 @@ $recent_crypto = $db->query('
     </div>
   </header>
   <!-- Main Content -->
-  <main class="admin-main-content" id="adminMainContent" style="margin-top: 500px;">
+  <main class="admin-main-content" id="adminMainContent" style="margin-top: 700px;">
     <div class="container-fluid px-0 widgets-container">
       <div class="row mb-4">
         <div class="col-12">
