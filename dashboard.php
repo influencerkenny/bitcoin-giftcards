@@ -231,10 +231,70 @@ $stmt->close();
     .widget-label { font-size: 1.05rem; font-weight: 500; opacity: 0.85; }
     .widget-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.2rem; }
     @media (max-width: 991px) {
-      .sidebar { left: -220px; transition: left 0.2s; }
-      .sidebar.open { left: 0; }
-      #sidebarOverlay { display: none; }
-      #sidebarOverlay.active { display: block; }
+        .sidebar { 
+            left: -220px; 
+            transition: left 0.3s ease; 
+            z-index: 1000;
+        }
+        .sidebar.show { 
+            left: 0; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .main-content { 
+            margin-left: 0; 
+            flex: 1; 
+            padding: 1rem;
+        }
+        .main-content.collapsed { 
+            margin-left: 0; 
+        }
+        
+        /* Ensure header stays on top */
+        .dashboard-header {
+            z-index: 1001;
+        }
+        
+        /* Improve overlay */
+        #sidebarOverlay {
+            z-index: 999;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        /* Mobile sidebar improvements */
+        .sidebar-toggler {
+            display: none; /* Hide desktop toggle on mobile */
+        }
+        
+        .sidebar {
+            top: 64px; /* Ensure it starts below header */
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            padding: 1rem;
+            font-size: 1rem;
+        }
+        
+        .sidebar .nav-link span:first-child {
+            font-size: 1.3rem;
+        }
+        
+        /* Mobile sidebar button improvements */
+        #mobileSidebarBtn {
+            transition: all 0.2s ease;
+        }
+        
+        #mobileSidebarBtn:hover {
+            transform: scale(1.1);
+            background-color: #1a938a;
+            border-color: #1a938a;
+            color: white;
+        }
+        
+        #mobileSidebarBtn:active {
+            transform: scale(0.95);
+        }
     }
     .btc-list { margin-top: 0.5rem; }
     .btc-row { box-shadow: 0 1px 6px rgba(26,147,138,0.04); border-left: 4px solid #1a938a; }
@@ -277,7 +337,7 @@ $stmt->close();
   <!-- Header -->
   <header class="dashboard-header">
     <div class="d-flex align-items-center gap-3 flex-grow-1">
-      <button class="btn btn-outline-primary d-lg-none me-2" id="mobileSidebarBtn" style="font-size:1.5rem;"><span class="bi bi-list"></span></button>
+      <button class="btn btn-outline-primary d-lg-none me-2" id="mobileSidebarBtn" style="font-size:1.5rem; transition: all 0.2s ease;"><span class="bi bi-list"></span></button>
       <div class="dashboard-logo flex-grow-1">
         <img src="images/logo.png" alt="Logo" style="height:32px;"> Giftcard & Bitcoin
       </div>
@@ -536,32 +596,53 @@ $stmt->close();
     // Mobile sidebar toggle
     const mobileSidebarBtn = document.getElementById('mobileSidebarBtn');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
-    function openSidebar() {
-      sidebar.classList.add('open');
-      sidebarOverlay.classList.add('active');
-    }
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      sidebarOverlay.classList.remove('active');
-    }
-    if (mobileSidebarBtn) {
-      mobileSidebarBtn.addEventListener('click', openSidebar);
-    }
-    if (sidebarOverlay) {
-      sidebarOverlay.addEventListener('click', closeSidebar);
-    }
-    // Also close sidebar on nav link click (mobile)
-    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-      link.addEventListener('click', () => { if (window.innerWidth < 992) closeSidebar(); });
-    });
-    // Close sidebar when clicking outside (on overlay or main content)
-    if (mainContent) {
-      mainContent.addEventListener('click', function() {
-        if (window.innerWidth < 992 && sidebar.classList.contains('open')) {
-          closeSidebar();
+    
+    mobileSidebarBtn.addEventListener('click', function() {
+        sidebar.classList.toggle('show');
+        sidebarOverlay.style.display = sidebar.classList.contains('show') ? 'block' : 'none';
+        
+        // Add visual feedback
+        if (sidebar.classList.contains('show')) {
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        } else {
+            document.body.style.overflow = ''; // Restore scrolling
         }
-      });
-    }
+    });
+
+    sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('show');
+        sidebarOverlay.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+    });
+
+    // Close sidebar when clicking on navigation links (mobile)
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth < 992) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+        });
+    });
+
+    // Close sidebar when clicking outside (on main content)
+    mainContent.addEventListener('click', function() {
+        if (window.innerWidth < 992 && sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
+            sidebarOverlay.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+    });
+
+    // Close sidebar on window resize if switching to desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+            sidebar.classList.remove('show');
+            sidebarOverlay.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+    });
     
     // Function to open image modal
     function openImageModal(imageSrc) {

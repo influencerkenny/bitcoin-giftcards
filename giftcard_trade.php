@@ -181,13 +181,73 @@ $stmt->close();
     }
     .sidebar.collapsed ~ .main-content { margin-left: 60px; }
     @media (max-width: 991px) {
-      .dashboard-header { position: fixed; top: 0; left: 0; width: 100vw; z-index: 110; }
-      .sidebar { position: fixed; left: -220px; top: 64px; height: 100vh; z-index: 100; transition: left 0.2s; }
-      .sidebar.open { left: 0; }
-      #sidebarOverlay { display: none; }
-      #sidebarOverlay.active { display: block; }
-      .main-content { margin-left: 0; padding: 1.2rem 0.5rem; padding-top: 80px; }
-      .sidebar.collapsed ~ .main-content { margin-left: 0; }
+        .dashboard-header { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            z-index: 1001; 
+        }
+        .sidebar { 
+            position: fixed; 
+            left: -220px; 
+            top: 64px; 
+            height: 100vh; 
+            z-index: 1000; 
+            transition: left 0.3s ease; 
+        }
+        .sidebar.show { 
+            left: 0; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        #sidebarOverlay { 
+            z-index: 999;
+            background: rgba(0,0,0,0.5);
+        }
+        .main-content { 
+            margin-left: 0; 
+            padding: 1rem; 
+            padding-top: 80px; 
+        }
+        .sidebar.collapsed ~ .main-content { 
+            margin-left: 0; 
+        }
+        
+        /* Mobile sidebar improvements */
+        .sidebar-toggler {
+            display: none; /* Hide desktop toggle on mobile */
+        }
+        
+        .sidebar {
+            top: 64px; /* Ensure it starts below header */
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+        
+        .sidebar .nav-link {
+            padding: 1rem;
+            font-size: 1rem;
+        }
+        
+        .sidebar .nav-link span:first-child {
+            font-size: 1.3rem;
+        }
+        
+        /* Mobile sidebar button improvements */
+        #mobileSidebarBtn {
+            transition: all 0.2s ease;
+        }
+        
+        #mobileSidebarBtn:hover {
+            transform: scale(1.1);
+            background-color: #1a938a;
+            border-color: #1a938a;
+            color: white;
+        }
+        
+        #mobileSidebarBtn:active {
+            transform: scale(0.95);
+        }
     }
     @media (max-width: 600px) {
       .dashboard-header { padding: 0.5rem 0.7rem; }
@@ -263,7 +323,7 @@ $stmt->close();
   <!-- Header -->
   <header class="dashboard-header">
     <div class="d-flex align-items-center gap-3 flex-grow-1">
-      <button class="btn btn-outline-primary d-lg-none me-2" id="mobileSidebarBtn" style="font-size:1.5rem;"><span class="bi bi-list"></span></button>
+      <button class="btn btn-outline-primary d-lg-none me-2" id="mobileSidebarBtn" style="font-size:1.5rem; transition: all 0.2s ease;"><span class="bi bi-list"></span></button>
       <div class="dashboard-logo flex-grow-1">
         <img src="images/logo.png" alt="Logo" style="height:32px;"> Giftcard & Bitcoin
       </div>
@@ -463,32 +523,53 @@ $stmt->close();
     // Mobile sidebar toggle
     const mobileSidebarBtn = document.getElementById('mobileSidebarBtn');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
-    function openSidebar() {
-      sidebar.classList.add('open');
-      sidebarOverlay.classList.add('active');
-    }
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      sidebarOverlay.classList.remove('active');
-    }
-    if (mobileSidebarBtn) {
-      mobileSidebarBtn.addEventListener('click', openSidebar);
-    }
-    if (sidebarOverlay) {
-      sidebarOverlay.addEventListener('click', closeSidebar);
-    }
-    // Also close sidebar on nav link click (mobile)
-    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-      link.addEventListener('click', () => { if (window.innerWidth < 992) closeSidebar(); });
-    });
-    // Close sidebar when clicking outside (on overlay or main content)
-    if (mainContent) {
-      mainContent.addEventListener('click', function() {
-        if (window.innerWidth < 992 && sidebar.classList.contains('open')) {
-          closeSidebar();
+    
+    mobileSidebarBtn.addEventListener('click', function() {
+        sidebar.classList.toggle('show');
+        sidebarOverlay.style.display = sidebar.classList.contains('show') ? 'block' : 'none';
+        
+        // Add visual feedback
+        if (sidebar.classList.contains('show')) {
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        } else {
+            document.body.style.overflow = ''; // Restore scrolling
         }
-      });
-    }
+    });
+
+    sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('show');
+        sidebarOverlay.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+    });
+
+    // Close sidebar when clicking on navigation links (mobile)
+    document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth < 992) {
+                sidebar.classList.remove('show');
+                sidebarOverlay.style.display = 'none';
+                document.body.style.overflow = ''; // Restore scrolling
+            }
+        });
+    });
+
+    // Close sidebar when clicking outside (on main content)
+    mainContent.addEventListener('click', function() {
+        if (window.innerWidth < 992 && sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
+            sidebarOverlay.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+    });
+
+    // Close sidebar on window resize if switching to desktop
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+            sidebar.classList.remove('show');
+            sidebarOverlay.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+    });
   </script>
   <script>
     // Populate trade modal with card info
